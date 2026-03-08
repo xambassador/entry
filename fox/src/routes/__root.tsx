@@ -1,13 +1,18 @@
+import { Fragment } from "react/jsx-runtime";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
+import { Nav } from "@/components/nav";
+
 function RootLayout() {
   return (
-    <div>
-      <h1>Root Layout</h1>
-      <Outlet />
+    <Fragment>
+      <Nav />
+      <main className="max-w-6xl mx-auto">
+        <Outlet />
+      </main>
       <TanStackRouterDevtools />
-    </div>
+    </Fragment>
   );
 }
 
