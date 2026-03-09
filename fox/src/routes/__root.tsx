@@ -8,7 +8,7 @@ function RootLayout() {
   return (
     <Fragment>
       <Nav />
-      <main className="max-w-6xl mx-auto">
+      <main className="max-w-6xl mx-auto w-full h-[calc(100vh-var(--nav-height))] py-10">
         <Outlet />
       </main>
       <TanStackRouterDevtools />

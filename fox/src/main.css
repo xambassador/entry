@@ -29,7 +29,7 @@
   --radius-5xl: 1.75rem;
 
   --nav-height: 5rem;
-  --year-at-glance-height: 30rem;
+  --year-at-glance-height: 56.25rem;
   --year-at-glance-width: 50rem;
 
   --shadow-year-at-glance: 2px 0 0 var(--color-journal-elevated);
@@ -51,4 +51,28 @@ body {
 
 #root {
   @apply min-h-screen;
+}
+
+.dot-leader {
+  border-bottom: 1px dotted var(--color-ink-faint);
+  opacity: 0.25;
+  margin-bottom: 4px;
+  transition: opacity 0.2s ease;
+}
+
+.entry-row::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 25%;
+  bottom: 25%;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--color-gilt);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.entry-row:hover::before {
+  opacity: 0.5;
 }
