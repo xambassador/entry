@@ -3,9 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { DiaryCover } from "@/components/diary-cover";
 
-export const Route = createFileRoute("/entries")({
-  component: RouteComponent
-});
+export const Route = createFileRoute("/entries")({ component: RouteComponent });
 
 const MONTH_NAMES = [
   "January",
@@ -26,7 +24,7 @@ function RouteComponent() {
   const month = new Date().getMonth();
   return (
     <DiaryCover className="max-h-full" shellProps={{ className: "py-5" }}>
-      <div className="space-y-6 max-w-2xl mx-auto size-full">
+      <div className="flex flex-col space-y-6 max-w-2xl mx-auto size-full overflow-hidden">
         <div className="text-center pt-2">
           <h1 className="font-light text-ink text-2xl">Index</h1>
         </div>
@@ -47,21 +45,23 @@ function RouteComponent() {
           </div>
         </div>
 
-        <div className="relative rounded-xl index-page">
-          <div className="space-y-6">
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <h3 className="text-lg tracking-wide whitespace-nowrap text-gilt">Mar 1 - Mar 7</h3>
-                <div className="h-px flex-1 bg-linear-to-r from-gilt/15 to-transparent" />
-              </div>
+        <div className="relative rounded-xl index-page min-h-0 flex-1 overflow-hidden">
+          <div className="h-full overflow-y-auto space-y-6 pr-1">
+            {Array.from({ length: 1 }).map((_, i) => (
+              <div key={i}>
+                <div className="flex items-center gap-3 mb-3">
+                  <h3 className="text-lg tracking-wide whitespace-nowrap text-gilt">Mar 1 - Mar 7</h3>
+                  <div className="h-px flex-1 bg-linear-to-r from-gilt/15 to-transparent" />
+                </div>
 
-              <div className="space-y-0">
-                <Entry />
-                <Entry />
-                <Entry />
-                <Entry />
+                <div className="space-y-0">
+                  <Entry />
+                  <Entry />
+                  <Entry />
+                  <Entry />
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
