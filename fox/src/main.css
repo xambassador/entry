@@ -4,6 +4,7 @@
 @theme {
   --color-journal-dark: oklch(0.154 0.0092 264.28);
   --color-journal-surface: oklch(0.1919 0.0126 270.68);
+  --color-journal-page: oklch(0.214 0.0165 268.88);
   --color-journal-card: oklch(0.2313 0.0161 268.96);
   --color-journal-hover: oklch(0.2685 0.0178 266.3);
   --color-journal-elevated: oklch(0.297 0.0213 265.87);
@@ -20,6 +21,14 @@
   --color-shark: oklch(0.2183 0.0121 270.81);
   --color-twine: oklch(0.7298 0.1 85.55);
   --color-driftwood: oklch(0.6591 0.102 83.25);
+  --color-diary-fold: oklch(0.7569 0.0976 190.25 / 8%);
+  --color-diary-fold-highlight: oklch(1 0 0 / 4%);
+  --color-dot-grid: oklch(0.7569 0.0976 190.25 / 10%);
+  --color-diary-left-gradient-linear: oklch(0.7569 0.0976 190.25 / 2%);
+  --color-diary-left-gradient-radial: oklch(0.7569 0.0976 190.25 / 1.5%);
+  --color-wax: oklch(0.6024 0.1336 21.88);
+  --color-wax-light: oklch(0.6661 0.1319 21.23);
+  --color-wax-seal: oklch(0.4104 0.1066 23);
 
   --font-display: "DM Sans", sans-serif;
   --font-handwriting: "Niconne", cursive;
