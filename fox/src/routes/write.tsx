@@ -1,65 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import * as Popover from "@radix-ui/react-popover";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeft, Hash } from "lucide-react";
 
 import "./write.css";
 
-import { cn } from "@/lib/cn";
+import type { Mood } from "@/types";
+
+import { MoodPicker } from "@/components/mood-picker";
 
 export const Route = createFileRoute("/write")({ component: RouteComponent });
-
-type Mood =
-  | "joyful"
-  | "calm"
-  | "reflective"
-  | "anxious"
-  | "grateful"
-  | "creative"
-  | "tired"
-  | "excited"
-  | "melancholy"
-  | "peaceful"
-  | null;
-
-const MOOD_COLORS: Record<string, string> = {
-  joyful: "#F5D45E",
-  calm: "#5BC4BE",
-  reflective: "#A893D4",
-  anxious: "#E8836A",
-  grateful: "#E0A86E",
-  creative: "#F0A0E0",
-  tired: "#8A9AAE",
-  excited: "#FF7A7A",
-  melancholy: "#6E94B8",
-  peaceful: "#7ED4A0"
-};
-
-const MOOD_EMOJI: Record<string, string> = {
-  joyful: "😊",
-  calm: "😌",
-  reflective: "🤔",
-  anxious: "😰",
-  grateful: "🙏",
-  creative: "✨",
-  tired: "😴",
-  excited: "🎉",
-  melancholy: "🌧️",
-  peaceful: "🕊️"
-};
-
-const ALL_MOODS: Mood[] = [
-  "joyful",
-  "calm",
-  "reflective",
-  "anxious",
-  "grateful",
-  "creative",
-  "tired",
-  "excited",
-  "melancholy",
-  "peaceful"
-];
 
 const quote = {
   text: "One day I will find the right words, and they will be simple.",
@@ -90,6 +39,11 @@ function RouteComponent() {
     setTags(tags.filter((t) => t !== tag));
   }
 
+  const handleMoodChange = useCallback((mood: Mood) => {
+    setMood(mood);
+    setShowMoodPicker(false);
+  }, []);
+
   const autoResize = useCallback(() => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -103,18 +57,11 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col flex-1 gap-5 h-full">
-      <button className="flex items-center gap-2 text-ink-muted hover:text-ink transition-colors duration-200 cursor-pointer group">
-        <ArrowLeft
-          size={16}
-          strokeWidth={1.5}
-          className="group-hover:-translate-x-0.5 transition-transform duration-200"
-        />
-        <span className="text-sm font-body">Back to entries</span>
-      </button>
+      {backToEntries}
 
       <div className="open-diary overflow-hidden w-full flex-1 min-h-0 flex flex-col relative bg-transparent rounded-3xl">
-        <div className="open-diary-edge-top" />
-        <div className="open-diary-edge-bottom" />
+        {diaryEdgeTop}
+        {diaryEdgeBottom}
 
         <div className="flex flex-1 min-h-0">
           <div className="open-diary-left open-diary-paper-texture relative w-1/2 flex flex-col justify-between p-8 max-[900px]:w-full max-[900px]:p-6 bg-journal-surface z-2 shrink-0 rounded-l-3xl">
@@ -125,7 +72,7 @@ function RouteComponent() {
                 <p className="text-sm mt-0.5 text-ink-secondary opacity-60">March, 2026</p>
               </div>
 
-              <p className="open-diary-ornament text-sm">&#x2022; &#x2022; &#x2022;</p>
+              {ornament}
 
               <div>
                 <blockquote className="leading-relaxed text-ink-secondary">&ldquo;{quote.text}&rdquo;</blockquote>
@@ -133,66 +80,19 @@ function RouteComponent() {
               </div>
 
               <div>
-                <p className="text-[12px] tracking-widest uppercase mb-3 text-ink-faint">Mood</p>
-                <Popover.Root open={showMoodPicker} onOpenChange={setShowMoodPicker}>
-                  <Popover.Trigger asChild>
-                    <button className="flex items-center gap-3 cursor-pointer group">
-                      <div
-                        className="wax-seal"
-                        style={
-                          mood
-                            ? {
-                                background: `radial-gradient(circle at 35% 35%, ${MOOD_COLORS[mood]}CC 0%, ${MOOD_COLORS[mood]}99 60%, ${MOOD_COLORS[mood]}66 100%)`
-                              }
-                            : undefined
-                        }
-                      >
-                        <span className="text-[14px]">{mood ? MOOD_EMOJI[mood] : "?"}</span>
-                      </div>
-                      {mood ? (
-                        <span className="text-sm capitalize text-ink-muted font-medium">Feeling {mood}</span>
-                      ) : (
-                        <span className="text-sm italic text-ink-faint">How are you feeling?</span>
-                      )}
-                    </button>
-                  </Popover.Trigger>
-
-                  <Popover.Portal>
-                    <Popover.Content
-                      sideOffset={8}
-                      className="bg-journal-elevated border border-border-strong rounded-xl p-4 shadow-2xl shadow-black/40 z-50"
-                    >
-                      <p className="text-sm font-mono text-ink-muted tracking-wider uppercase mb-3">
-                        How are you feeling?
-                      </p>
-                      <div className="grid grid-cols-5 gap-2">
-                        {ALL_MOODS.map((m) => (
-                          <button
-                            key={m}
-                            onClick={() => {
-                              setMood(m);
-                              setShowMoodPicker(false);
-                            }}
-                            className={cn(
-                              "flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 cursor-pointer",
-                              mood === m ? "bg-gilt/15 ring-1 ring-gilt/30" : "hover:bg-journal-hover"
-                            )}
-                          >
-                            <span className="text-lg">{MOOD_EMOJI[m!]}</span>
-                            <span className="text-xs font-mono text-ink-muted capitalize">{m}</span>
-                          </button>
-                        ))}
-                      </div>
-                      <Popover.Arrow className="fill-journal-elevated" />
-                    </Popover.Content>
-                  </Popover.Portal>
-                </Popover.Root>
+                {moodText}
+                <MoodPicker
+                  mood={mood}
+                  onMoodChange={handleMoodChange}
+                  open={showMoodPicker}
+                  onOpenChange={setShowMoodPicker}
+                />
               </div>
 
               <div>
                 <p className="text-[12px] tracking-widest uppercase mb-2 text-ink-faint">Tags</p>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <Hash size={11} strokeWidth={1.5} className="text-ink-faint" />
+                  {hashIcon}
                   {tags.map((tag) => (
                     <span
                       key={tag}
@@ -230,11 +130,11 @@ function RouteComponent() {
                 <span className="text-ink-faint text-xs open-diary-wordcount">{charCount} chars</span>
                 <div className="w-1.5 h-1.5 rounded-full ml-auto" />
               </div>
-              <span className="text-ink-faint text-sm">page 1</span>
+              {pageOneText}
             </div>
           </div>
 
-          <div className="open-diary-fold relative w-px shrink-0 bg-diary-fold z-5 max-[900px]:hidden pointer-events-none" />
+          {diaryFold}
 
           <div className="open-diary-right open-diary-paper-texture w-1/2 max-[900px]:w-full relative shrink-0 rounded-r-3xl bg-journal-page">
             <div className="relative z-3 h-full flex flex-col px-8 pt-8 pb-12">
@@ -249,7 +149,7 @@ function RouteComponent() {
                 className="w-full bg-transparent font-display text-2xl font-light tracking-wide outline-none mb-4 text-ink"
               />
 
-              <div className="w-16 mb-6 h-px bg-gilt-dim" />
+              {glitDimBorder}
 
               <textarea
                 ref={textareaRef}
@@ -263,14 +163,34 @@ function RouteComponent() {
               />
             </div>
 
-            <div className="open-diary-curl" />
-
-            <div className="absolute bottom-4 right-0 left-0 flex justify-center z-3">
-              <span className="text-ink-faint text-sm">page 2</span>
-            </div>
+            {diaryCurl}
+            {pageTwoText}
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+const backToEntries = (
+  <button className="flex items-center gap-2 text-ink-muted hover:text-ink transition-colors duration-200 cursor-pointer group">
+    <ArrowLeft size={16} strokeWidth={1.5} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
+    <span className="text-sm font-body">Back to entries</span>
+  </button>
+);
+const diaryEdgeTop = <div className="open-diary-edge-top" />;
+const diaryEdgeBottom = <div className="open-diary-edge-bottom" />;
+const ornament = <p className="open-diary-ornament text-sm">&#x2022; &#x2022; &#x2022;</p>;
+const hashIcon = <Hash size={11} strokeWidth={1.5} className="text-ink-faint" />;
+const pageOneText = <span className="text-ink-faint text-sm">page 1</span>;
+const diaryFold = (
+  <div className="open-diary-fold relative w-px shrink-0 bg-diary-fold z-5 max-[900px]:hidden pointer-events-none" />
+);
+const glitDimBorder = <div className="w-16 mb-6 h-px bg-gilt-dim" />;
+const diaryCurl = <div className="open-diary-curl" />;
+const pageTwoText = (
+  <div className="absolute bottom-4 right-0 left-0 flex justify-center z-3">
+    <span className="text-ink-faint text-sm">page 2</span>
+  </div>
+);
+const moodText = <p className="text-[12px] tracking-widest uppercase mb-3 text-ink-faint">Mood</p>;
