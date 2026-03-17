@@ -1,25 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft, Hash } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import "./write.css";
 
 import type { Mood } from "@/types";
 
 import { MoodPicker } from "@/components/mood-picker";
+import { Quote } from "@/components/quote";
+import { Tags } from "@/components/tags";
 
 export const Route = createFileRoute("/write")({ component: RouteComponent });
-
-const quote = {
-  text: "One day I will find the right words, and they will be simple.",
-  author: "Jack Kerouac"
-};
 
 function RouteComponent() {
   const [mood, setMood] = useState<Mood>(null);
   const [showMoodPicker, setShowMoodPicker] = useState(false);
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -27,17 +22,6 @@ function RouteComponent() {
 
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
   const charCount = content.length;
-
-  function handleAddTag() {
-    if (tagInput.trim() && !tags.includes(tagInput.trim().toLowerCase())) {
-      setTags([...tags, tagInput.trim().toLowerCase()]);
-      setTagInput("");
-    }
-  }
-
-  function handleRemoveTag(tag: string) {
-    setTags(tags.filter((t) => t !== tag));
-  }
 
   const handleMoodChange = useCallback((mood: Mood) => {
     setMood(mood);
@@ -74,11 +58,7 @@ function RouteComponent() {
 
               {ornament}
 
-              <div>
-                <blockquote className="leading-relaxed text-ink-secondary">&ldquo;{quote.text}&rdquo;</blockquote>
-                <p className="text-sm mt-3 text-ink-muted">— {quote.author}</p>
-              </div>
-
+              <Quote />
               <div>
                 {moodText}
                 <MoodPicker
@@ -89,37 +69,7 @@ function RouteComponent() {
                 />
               </div>
 
-              <div>
-                <p className="text-[12px] tracking-widest uppercase mb-2 text-ink-faint">Tags</p>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {hashIcon}
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-2 rounded-full text-xs tracking-wider uppercase cursor-pointer group flex items-center gap-1 transition-all duration-200 text-ink-faint border border-gilt-dim"
-                      onClick={() => handleRemoveTag(tag)}
-                    >
-                      {tag}
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity text-wax-light">
-                        &#x2715;
-                      </span>
-                    </span>
-                  ))}
-                  <input
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddTag();
-                      }
-                    }}
-                    placeholder="add tag..."
-                    className="bg-transparent text-xs tracking-wider outline-none w-16 text-ink-muted"
-                  />
-                </div>
-              </div>
+              <Tags />
             </div>
 
             <div className="relative z-3 flex flex-col gap-2 mt-6">
@@ -181,7 +131,6 @@ const backToEntries = (
 const diaryEdgeTop = <div className="open-diary-edge-top" />;
 const diaryEdgeBottom = <div className="open-diary-edge-bottom" />;
 const ornament = <p className="open-diary-ornament text-sm">&#x2022; &#x2022; &#x2022;</p>;
-const hashIcon = <Hash size={11} strokeWidth={1.5} className="text-ink-faint" />;
 const pageOneText = <span className="text-ink-faint text-sm">page 1</span>;
 const diaryFold = (
   <div className="open-diary-fold relative w-px shrink-0 bg-diary-fold z-5 max-[900px]:hidden pointer-events-none" />
