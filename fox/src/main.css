@@ -38,8 +38,7 @@
   --radius-5xl: 1.75rem;
 
   --nav-height: 5rem;
-  --year-at-glance-height: 56.25rem;
-  --year-at-glance-width: 50rem;
+  --year-at-glance-width: 56rem;
 
   --shadow-year-at-glance: 2px 0 0 var(--color-journal-elevated);
 }
