@@ -23,6 +23,7 @@ Thumbs.db
 
 # Go
 ant/tmp/
+ant/data/
 
 # Generated
 fox/app/routeTree.gen.ts
