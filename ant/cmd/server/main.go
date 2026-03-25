@@ -12,8 +12,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/xambassador/entry/internal/api"
 	"github.com/xambassador/entry/internal/config"
-	entryHttp "github.com/xambassador/entry/internal/http"
+	"github.com/xambassador/entry/internal/store"
 	_ "modernc.org/sqlite"
 )
 
@@ -36,10 +37,15 @@ func main() {
 	}
 	defer db.Close()
 
-	router := entryHttp.NewRouter(&cfg)
+	if err := store.Migrate(db); err != nil {
+		log.Fatalf("failed to run migrations: %v", err)
+		os.Exit(1)
+	}
+
+	api := api.NewAPI(&cfg, db)
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           router,
+		Handler:           api,
 		ReadTimeout:       cfg.ReadTimeout,
 		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
 		WriteTimeout:      cfg.WriteTimeout,
