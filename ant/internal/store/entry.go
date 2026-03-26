@@ -134,6 +134,68 @@ func (s *EntryStore) List(p ListEntriesParams) (*ListEntriesResult, error) {
 	}, nil
 }
 
+func (s *EntryStore) GetByID(userID, id string) (*Entry, error) {
+	var e Entry
+	var tagsJSON string
+	err := s.db.QueryRow(`
+		SELECT id, user_id, date, mood, emoji, file_path, word_count, tags, created_at, updated_at
+		FROM entries WHERE user_id = ? AND id = ?`, userID, id).
+		Scan(&e.ID, &e.UserID, &e.Date, &e.Mood, &e.Emoji, &e.FilePath, &e.WordCount, &tagsJSON, &e.CreatedAt, &e.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get entry: %w", err)
+	}
+	if err := json.Unmarshal([]byte(tagsJSON), &e.Tags); err != nil {
+		e.Tags = []string{}
+	}
+	return &e, nil
+}
+
+type UpdateEntryParams struct {
+	UserID    string
+	ID        string
+	Mood      string
+	Emoji     string
+	WordCount int
+	Tags      []string
+	FilePath  string
+}
+
+func (s *EntryStore) Update(p UpdateEntryParams) (*Entry, error) {
+	now := time.Now().UTC().Format(time.RFC3339)
+
+	tags := p.Tags
+	if tags == nil {
+		tags = []string{}
+	}
+	tagsJSON, err := json.Marshal(tags)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal tags: %w", err)
+	}
+
+	result, err := s.db.Exec(`
+		UPDATE entries
+		SET mood = ?, emoji = ?, word_count = ?, tags = ?, file_path = ?, updated_at = ?
+		WHERE user_id = ? AND id = ?`,
+		p.Mood, p.Emoji, p.WordCount, string(tagsJSON), p.FilePath, now, p.UserID, p.ID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update entry: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return nil, nil
+	}
+
+	return s.GetByID(p.UserID, p.ID)
+}
+
 func (s *EntryStore) ExistsByDate(userID, date string) (bool, error) {
 	var count int
 	err := s.db.QueryRow(`SELECT COUNT(*) FROM entries WHERE user_id = ? AND date = ?`, userID, date).Scan(&count)

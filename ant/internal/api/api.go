@@ -37,6 +37,8 @@ func NewAPI(cfg *config.Config, db *sql.DB) *API {
 	router.Route("/api/entries", func(r chi.Router) {
 		r.Post("/", api.CreateEntry)
 		r.Get("/", api.ListEntries)
+		r.Get("/{id}", api.GetEntry)
+		r.Put("/{id}", api.UpdateEntry)
 	})
 
 	api.handler = router

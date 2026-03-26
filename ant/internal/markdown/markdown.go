@@ -73,3 +73,30 @@ func WriteEntry(dataDir, userID string, fm Frontmatter, content string) (string,
 func WordCount(s string) int {
 	return len(strings.Fields(s))
 }
+
+func GetEntryContent(dataDir, userID, filePath string) (string, error) {
+	fullPath := filepath.Join(dataDir, filePath)
+	contentBytes, err := os.ReadFile(fullPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read file: %w", err)
+	}
+	return string(contentBytes), nil
+}
+
+func RemoveFrontmatter(content string) string {
+	lines := strings.Split(content, "\n")
+	if len(lines) < 3 || lines[0] != "---" {
+		return content
+	}
+	endIndex := -1
+	for i := 1; i < len(lines); i++ {
+		if lines[i] == "---" {
+			endIndex = i
+			break
+		}
+	}
+	if endIndex == -1 {
+		return content
+	}
+	return strings.Trim(strings.Join(lines[endIndex+1:], "\n"), "\n")
+}

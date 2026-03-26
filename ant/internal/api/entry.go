@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/xambassador/entry/internal/markdown"
 	"github.com/xambassador/entry/internal/store"
 	"github.com/xambassador/entry/internal/utils"
@@ -118,6 +119,131 @@ func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, entry)
+}
+
+type getEntryResponse struct {
+	Content string `json:"content"`
+	store.Entry
+}
+
+func (a *API) GetEntry(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	entry, err := a.entryStore.GetByID(defaultUserID, id)
+
+	if err != nil {
+		log.Printf("error getting entry: %v", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to get entry"))
+		return
+	}
+	if entry == nil {
+		utils.WriteJSON(w, http.StatusNotFound, utils.NewErrorResponse("entry_not_found", "Entry not found"))
+		return
+	}
+
+	content, err := markdown.GetEntryContent(a.config.DataDir, defaultUserID, entry.FilePath)
+	if err != nil {
+		log.Printf("error getting entry content: %v", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to get entry content"))
+		return
+	}
+
+	response := getEntryResponse{
+		Content: markdown.RemoveFrontmatter(content),
+		Entry:   *entry,
+	}
+
+	utils.WriteJSON(w, http.StatusOK, response)
+}
+
+type updateEntryRequest struct {
+	Mood    string   `json:"mood"`
+	Emoji   string   `json:"emoji"`
+	Tags    []string `json:"tags"`
+	Content string   `json:"content"`
+}
+
+func (r *updateEntryRequest) validate() (string, string) {
+	if !validMoods[r.Mood] {
+		return "invalid_mood", "Mood must be one of: great, good, okay, bad, terrible"
+	}
+	if strings.TrimSpace(r.Content) == "" {
+		return "missing_content", "Content is required"
+	}
+	return "", ""
+}
+
+func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	entry, err := a.entryStore.GetByID(defaultUserID, id)
+	if err != nil {
+		log.Printf("error getting entry: %v", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to get entry"))
+		return
+	}
+	if entry == nil {
+		utils.WriteJSON(w, http.StatusNotFound, utils.NewErrorResponse("entry_not_found", "Entry not found"))
+		return
+	}
+
+	body := &updateEntryRequest{}
+	if err := json.NewDecoder(r.Body).Decode(body); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_request_body", "Invalid request body"))
+		return
+	}
+
+	if code, msg := body.validate(); code != "" {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse(code, msg))
+		return
+	}
+
+	tags := body.Tags
+	if tags == nil {
+		tags = []string{}
+	}
+
+	wordCount := markdown.WordCount(body.Content)
+	now := time.Now().UTC().Format(time.RFC3339)
+
+	fm := markdown.Frontmatter{
+		ID:        entry.ID,
+		Date:      entry.Date,
+		Mood:      body.Mood,
+		Emoji:     body.Emoji,
+		CreatedAt: entry.CreatedAt,
+		UpdatedAt: now,
+		Tags:      tags,
+	}
+
+	relPath, err := markdown.WriteEntry(a.config.DataDir, defaultUserID, fm, body.Content)
+	if err != nil {
+		log.Printf("error writing markdown file: %v", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to write entry file"))
+		return
+	}
+
+	updated, err := a.entryStore.Update(store.UpdateEntryParams{
+		UserID:    defaultUserID,
+		ID:        entry.ID,
+		Mood:      body.Mood,
+		Emoji:     body.Emoji,
+		WordCount: wordCount,
+		Tags:      tags,
+		FilePath:  relPath,
+	})
+	if err != nil {
+		log.Printf("error updating entry in db: %v", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to update entry"))
+		return
+	}
+
+	response := getEntryResponse{
+		Content: body.Content,
+		Entry:   *updated,
+	}
+
+	utils.WriteJSON(w, http.StatusOK, response)
 }
 
 func (a *API) ListEntries(w http.ResponseWriter, r *http.Request) {

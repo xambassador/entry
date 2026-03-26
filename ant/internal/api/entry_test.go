@@ -318,20 +318,151 @@ func Test_CreateEntry_EmptyBody(t *testing.T) {
 	assert.Equal(t, "missing_date", body.Error.Code)
 }
 
-func Test_CreateEntry_WrongContentType_BodyIsStillParsed(t *testing.T) {
+func putEntry(t *testing.T, srv http.Handler, id string, body any) *httptest.ResponseRecorder {
+	t.Helper()
+
+	raw, err := json.Marshal(body)
+	require.NoError(t, err, "marshal request body")
+
+	req := httptest.NewRequest(http.MethodPut, "/api/entries/"+id, bytes.NewReader(raw))
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+	return rec
+}
+
+func Test_UpdateEntry_Success(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
 
-	payload, _ := json.Marshal(map[string]any{
-		"date":    "2026-11-01",
-		"content": "No content-type header.",
+	createRec := postEntry(t, srv, map[string]any{
+		"date":    "2026-02-10",
+		"mood":    "good",
+		"emoji":   "😊",
+		"tags":    []string{"original"},
+		"content": "Original content.",
+	})
+	require.Equal(t, http.StatusCreated, createRec.Code)
+
+	var created map[string]any
+	decodeBody(t, createRec, &created)
+	id := created["id"].(string)
+
+	rec := putEntry(t, srv, id, map[string]any{
+		"mood":    "great",
+		"emoji":   "🎉",
+		"tags":    []string{"updated", "go"},
+		"content": "Updated content with more words.",
 	})
 
-	req := httptest.NewRequest(http.MethodPost, "/api/entries", bytes.NewReader(payload))
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, "application/json; charset=utf-8", rec.Header().Get("Content-Type"))
+
+	var updated map[string]any
+	decodeBody(t, rec, &updated)
+	assert.Equal(t, id, updated["id"])
+	assert.Equal(t, "great", updated["mood"])
+	assert.Equal(t, "🎉", updated["emoji"])
+	assert.Equal(t, "Updated content with more words.", updated["content"])
+	assert.EqualValues(t, 5, updated["word_count"])
+	assert.Equal(t, created["created_at"], updated["created_at"])
+	assert.NotEmpty(t, updated["updated_at"])
+}
+
+func Test_UpdateEntry_UpdatesWordCount(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+
+	createRec := postEntry(t, srv, map[string]any{
+		"date":    "2026-02-11",
+		"content": "one two three",
+	})
+	require.Equal(t, http.StatusCreated, createRec.Code)
+
+	var created map[string]any
+	decodeBody(t, createRec, &created)
+	id := created["id"].(string)
+
+	rec := putEntry(t, srv, id, map[string]any{
+		"content": "one two three four five six seven",
+	})
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var updated map[string]any
+	decodeBody(t, rec, &updated)
+	assert.EqualValues(t, 7, updated["word_count"])
+}
+
+func Test_UpdateEntry_NotFound(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+
+	rec := putEntry(t, srv, "01NONEXISTENTID000000000000", map[string]any{
+		"content": "Some content.",
+	})
+
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+
+	var body errorBody
+	decodeBody(t, rec, &body)
+	assert.Equal(t, "entry_not_found", body.Error.Code)
+}
+
+func Test_UpdateEntry_InvalidJSON(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+
+	createRec := postEntry(t, srv, map[string]any{
+		"date":    "2026-02-12",
+		"content": "Hello world.",
+	})
+	require.Equal(t, http.StatusCreated, createRec.Code)
+
+	var created map[string]any
+	decodeBody(t, createRec, &created)
+	id := created["id"].(string)
+
+	req := httptest.NewRequest(http.MethodPut, "/api/entries/"+id, bytes.NewBufferString(`{not valid json`))
+	req.Header.Set("Content-Type", "application/json")
 
 	rec := httptest.NewRecorder()
 	srv.ServeHTTP(rec, req)
 
-	assert.Equal(t, http.StatusCreated, rec.Code)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+	var body errorBody
+	decodeBody(t, rec, &body)
+	assert.Equal(t, "invalid_request_body", body.Error.Code)
+}
+
+func Test_UpdateEntry_BlankContent(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+
+	createRec := postEntry(t, srv, map[string]any{
+		"date":    "2026-02-14",
+		"content": "Hello world.",
+	})
+	require.Equal(t, http.StatusCreated, createRec.Code)
+
+	var created map[string]any
+	decodeBody(t, createRec, &created)
+	id := created["id"].(string)
+
+	rec := putEntry(t, srv, id, map[string]any{
+		"content": "   ",
+	})
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+	var body errorBody
+	decodeBody(t, rec, &body)
+	assert.Equal(t, "missing_content", body.Error.Code)
 }
