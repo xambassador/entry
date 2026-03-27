@@ -73,6 +73,7 @@ func Test_CreateEntry_Success(t *testing.T) {
 	srv := newTestServer(t)
 
 	reqBody := map[string]any{
+		"title":   "My First Entry",
 		"date":    "2026-01-15",
 		"mood":    "great",
 		"emoji":   "😀",
@@ -92,6 +93,7 @@ func Test_CreateEntry_Success_WordCountCalculation(t *testing.T) {
 	srv := newTestServer(t)
 
 	rec := postEntry(t, srv, map[string]any{
+		"title":   "My First Entry",
 		"date":    "2026-04-20",
 		"content": "one two three four five",
 	})
@@ -104,12 +106,12 @@ func Test_CreateEntry_Success_WordCountCalculation(t *testing.T) {
 }
 
 func Test_CreateEntry_Success_ContentWithOnlyWhitespaceWords(t *testing.T) {
-	// Content with leading/trailing whitespace but actual words must be accepted.
 	t.Parallel()
 
 	srv := newTestServer(t)
 
 	rec := postEntry(t, srv, map[string]any{
+		"title":   "My First Entry",
 		"date":    "2026-04-21",
 		"content": "  hello world  ",
 	})
@@ -143,6 +145,7 @@ func Test_CreateEntry_InvalidDateFormat(t *testing.T) {
 			srv := newTestServer(t)
 
 			rec := postEntry(t, srv, map[string]any{
+				"title":   "My First Entry",
 				"date":    date,
 				"content": "Testing invalid date format.",
 			})
@@ -177,6 +180,7 @@ func Test_CreateEntry_InvalidMood(t *testing.T) {
 			srv := newTestServer(t)
 
 			rec := postEntry(t, srv, map[string]any{
+				"title":   "My First Entry",
 				"date":    "2026-06-01",
 				"mood":    mood,
 				"content": "Testing invalid mood.",
@@ -197,7 +201,8 @@ func Test_CreateEntry_MissingContent(t *testing.T) {
 	srv := newTestServer(t)
 
 	rec := postEntry(t, srv, map[string]any{
-		"date": "2026-07-04",
+		"title": "My First Entry",
+		"date":  "2026-07-04",
 	})
 
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
@@ -226,6 +231,7 @@ func Test_CreateEntry_BlankContent(t *testing.T) {
 			srv := newTestServer(t)
 
 			rec := postEntry(t, srv, map[string]any{
+				"title":   "My First Entry",
 				"date":    "2026-07-05",
 				"content": content,
 			})
@@ -245,6 +251,7 @@ func Test_CreateEntry_DuplicateDate_ReturnsConflict(t *testing.T) {
 	srv := newTestServer(t)
 
 	body := map[string]any{
+		"title":   "My First Entry",
 		"date":    "2026-09-01",
 		"content": "First entry for this date.",
 	}
@@ -253,6 +260,7 @@ func Test_CreateEntry_DuplicateDate_ReturnsConflict(t *testing.T) {
 	require.Equal(t, http.StatusCreated, rec.Code, "first entry should be created successfully")
 
 	rec2 := postEntry(t, srv, map[string]any{
+		"title":   "My Second Entry",
 		"date":    "2026-09-01",
 		"content": "Duplicate entry for the same date.",
 	})
@@ -270,12 +278,14 @@ func Test_CreateEntry_DifferentDates_BothSucceed(t *testing.T) {
 	srv := newTestServer(t)
 
 	rec1 := postEntry(t, srv, map[string]any{
+		"title":   "My First Entry",
 		"date":    "2026-10-01",
 		"content": "Entry for October 1st.",
 	})
 	assert.Equal(t, http.StatusCreated, rec1.Code)
 
 	rec2 := postEntry(t, srv, map[string]any{
+		"title":   "My Second Entry",
 		"date":    "2026-10-02",
 		"content": "Entry for October 2nd.",
 	})
@@ -315,7 +325,7 @@ func Test_CreateEntry_EmptyBody(t *testing.T) {
 
 	var body errorBody
 	decodeBody(t, rec, &body)
-	assert.Equal(t, "missing_date", body.Error.Code)
+	assert.Equal(t, "missing_title", body.Error.Code)
 }
 
 func putEntry(t *testing.T, srv http.Handler, id string, body any) *httptest.ResponseRecorder {
@@ -338,6 +348,7 @@ func Test_UpdateEntry_Success(t *testing.T) {
 	srv := newTestServer(t)
 
 	createRec := postEntry(t, srv, map[string]any{
+		"title":   "My First Entry",
 		"date":    "2026-02-10",
 		"mood":    "good",
 		"emoji":   "😊",
@@ -377,6 +388,7 @@ func Test_UpdateEntry_UpdatesWordCount(t *testing.T) {
 	srv := newTestServer(t)
 
 	createRec := postEntry(t, srv, map[string]any{
+		"title":   "My First Entry",
 		"date":    "2026-02-11",
 		"content": "one two three",
 	})
@@ -419,6 +431,7 @@ func Test_UpdateEntry_InvalidJSON(t *testing.T) {
 	srv := newTestServer(t)
 
 	createRec := postEntry(t, srv, map[string]any{
+		"title":   "My First Entry",
 		"date":    "2026-02-12",
 		"content": "Hello world.",
 	})
@@ -447,6 +460,7 @@ func Test_UpdateEntry_BlankContent(t *testing.T) {
 	srv := newTestServer(t)
 
 	createRec := postEntry(t, srv, map[string]any{
+		"title":   "My First Entry",
 		"date":    "2026-02-14",
 		"content": "Hello world.",
 	})

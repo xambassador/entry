@@ -27,6 +27,7 @@ var validMoods = map[string]bool{
 
 type createEntryRequest struct {
 	Date    string   `json:"date"`
+	Title   string   `json:"title"`
 	Mood    string   `json:"mood"`
 	Emoji   string   `json:"emoji"`
 	Tags    []string `json:"tags"`
@@ -34,6 +35,9 @@ type createEntryRequest struct {
 }
 
 func (r *createEntryRequest) validate() (string, string) {
+	if strings.TrimSpace(r.Title) == "" {
+		return "missing_title", "Title is required"
+	}
 	if strings.TrimSpace(r.Date) == "" {
 		return "missing_date", "Date is required"
 	}
@@ -84,6 +88,7 @@ func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 
 	fm := markdown.Frontmatter{
 		Date:      body.Date,
+		Title:     body.Title,
 		Mood:      body.Mood,
 		Emoji:     body.Emoji,
 		CreatedAt: now,
@@ -101,6 +106,7 @@ func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	entry, err := a.entryStore.Create(store.CreateEntryParams{
 		UserID:    userID,
 		Date:      body.Date,
+		Title:     body.Title,
 		Mood:      body.Mood,
 		Emoji:     body.Emoji,
 		FilePath:  relPath,
@@ -157,6 +163,7 @@ func (a *API) GetEntry(w http.ResponseWriter, r *http.Request) {
 }
 
 type updateEntryRequest struct {
+	Title   string   `json:"title"`
 	Mood    string   `json:"mood"`
 	Emoji   string   `json:"emoji"`
 	Tags    []string `json:"tags"`
@@ -209,6 +216,7 @@ func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 	fm := markdown.Frontmatter{
 		ID:        entry.ID,
 		Date:      entry.Date,
+		Title:     body.Title,
 		Mood:      body.Mood,
 		Emoji:     body.Emoji,
 		CreatedAt: entry.CreatedAt,
@@ -226,6 +234,7 @@ func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 	updated, err := a.entryStore.Update(store.UpdateEntryParams{
 		UserID:    defaultUserID,
 		ID:        entry.ID,
+		Title:     body.Title,
 		Mood:      body.Mood,
 		Emoji:     body.Emoji,
 		WordCount: wordCount,
@@ -281,6 +290,66 @@ func (a *API) ListEntries(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("error listing entries: %v", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to list entries"))
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, result)
+}
+
+func (a *API) SearchEntries(w http.ResponseWriter, r *http.Request) {
+	userID := defaultUserID
+
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	rawTags := r.URL.Query().Get("tags")
+
+	var tags []string
+	if rawTags != "" {
+		for t := range strings.SplitSeq(rawTags, ",") {
+			if trimmed := strings.TrimSpace(t); trimmed != "" {
+				tags = append(tags, trimmed)
+			}
+		}
+	}
+
+	if q == "" && len(tags) == 0 {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("missing_query", "At least one of 'q' (title search) or 'tags' must be provided"))
+		return
+	}
+
+	limit := a.config.DefaultLimit
+	offset := 0
+
+	if raw := r.URL.Query().Get("limit"); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed < 1 {
+			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_limit", "Limit must be a positive integer"))
+			return
+		}
+		if parsed > a.config.MaxLimit {
+			parsed = a.config.MaxLimit
+		}
+		limit = parsed
+	}
+
+	if raw := r.URL.Query().Get("offset"); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed < 0 {
+			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_offset", "Offset must be a non-negative integer"))
+			return
+		}
+		offset = parsed
+	}
+
+	result, err := a.entryStore.Search(store.SearchEntriesParams{
+		UserID: userID,
+		Query:  q,
+		Tags:   tags,
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		log.Printf("error searching entries: %v", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to search entries"))
 		return
 	}
 

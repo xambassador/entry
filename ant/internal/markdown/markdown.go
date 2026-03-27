@@ -11,6 +11,7 @@ import (
 type Frontmatter struct {
 	ID        string   `yaml:"id"`
 	Date      string   `yaml:"date"`
+	Title     string   `yaml:"title"`
 	Mood      string   `yaml:"mood"`
 	Emoji     string   `yaml:"emoji"`
 	CreatedAt string   `yaml:"created_at"`
@@ -41,6 +42,7 @@ func WriteEntry(dataDir, userID string, fm Frontmatter, content string) (string,
 	b.WriteString("---\n")
 	fmt.Fprintf(&b, "id: %q\n", fm.ID)
 	fmt.Fprintf(&b, "date: %q\n", fm.Date)
+	fmt.Fprintf(&b, "title: %q\n", fm.Title)
 	fmt.Fprintf(&b, "mood: %q\n", fm.Mood)
 	fmt.Fprintf(&b, "emoji: %q\n", fm.Emoji)
 	fmt.Fprintf(&b, "created_at: %q\n", fm.CreatedAt)

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS entries (
 	id         TEXT PRIMARY KEY,
 	user_id    TEXT NOT NULL DEFAULT 'default',
 	date       TEXT NOT NULL,
+	title      TEXT NOT NULL DEFAULT '',
 	mood       TEXT NOT NULL DEFAULT '',
 	emoji      TEXT NOT NULL DEFAULT '',
 	file_path  TEXT NOT NULL,
@@ -22,6 +23,28 @@ CREATE TABLE IF NOT EXISTS entries (
 
 CREATE INDEX IF NOT EXISTS idx_entries_user_date ON entries(user_id, date);
 CREATE INDEX IF NOT EXISTS idx_entries_date ON entries(date);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(
+	title,
+	tags,
+	content=entries,
+	content_rowid=rowid,
+	tokenize='unicode61'
+);
+
+-- Keep FTS index in sync with the entries table.
+CREATE TRIGGER IF NOT EXISTS entries_fts_insert AFTER INSERT ON entries BEGIN
+	INSERT INTO entries_fts(rowid, title, tags) VALUES (new.rowid, new.title, new.tags);
+END;
+
+CREATE TRIGGER IF NOT EXISTS entries_fts_update AFTER UPDATE ON entries BEGIN
+	INSERT INTO entries_fts(entries_fts, rowid, title, tags) VALUES ('delete', old.rowid, old.title, old.tags);
+	INSERT INTO entries_fts(rowid, title, tags) VALUES (new.rowid, new.title, new.tags);
+END;
+
+CREATE TRIGGER IF NOT EXISTS entries_fts_delete AFTER DELETE ON entries BEGIN
+	INSERT INTO entries_fts(entries_fts, rowid, title, tags) VALUES ('delete', old.rowid, old.title, old.tags);
+END;
 `
 
 func Migrate(db *sql.DB) error {
