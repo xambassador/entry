@@ -2,6 +2,8 @@ import type { Entry, GetEntriesResponse } from "@/types";
 
 import { MONTH_NAMES } from "@/lib/constant";
 
+import { getDaysInMonth } from "./date";
+
 type Entries = GetEntriesResponse["entries"];
 type Week = {
   label: string;
@@ -9,8 +11,7 @@ type Week = {
 };
 
 export function groupEntriesByWeek(entries: Entries, month: number, year: number) {
-  // If we pass month as 0-indexed, then 0 in day will give us the last day of the previous month.
-  const totalDays = new Date(year, month + 1, 0).getDate();
+  const totalDays = getDaysInMonth(year, month);
   const weeks: Week[] = [];
 
   const monthString = String(month + 1).padStart(2, "0");

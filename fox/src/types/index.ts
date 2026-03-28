@@ -78,3 +78,12 @@ export interface GetEntryResponse {
   created_at: string;
   updated_at: string;
 }
+
+export interface GetYearAtGlanceResponse {
+  entries: {
+    id: string;
+    date: string;
+    emoji: string;
+  }[];
+  total: number;
+}

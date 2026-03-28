@@ -13,7 +13,7 @@ export const MONTH_NAMES = [
   "December"
 ];
 export const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
+export const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 export const CURRENT_YEAR = new Date().getFullYear();
 export const CURRENT_MONTH = new Date().getMonth();
 export const EARLIEST_YEAR = 2000;

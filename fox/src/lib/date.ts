@@ -21,3 +21,11 @@ export function getWeekdayWithFallback(date?: Date | string) {
     ? new Date(date).toLocaleString("default", { weekday: "long" })
     : currentDate.toLocaleString("default", { weekday: "long" });
 }
+
+export function getDaysInMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+export function getFirstDayOfMonth(year: number, month: number): number {
+  return new Date(year, month, 1).getDay();
+}

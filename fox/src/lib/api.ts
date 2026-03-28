@@ -2,12 +2,13 @@ import type {
   CreateEntryInput,
   CreateEntryResponse,
   GetEntriesResponse,
+  GetEntryResponse,
   GetSearchEntriesResponse,
+  GetYearAtGlanceResponse,
   UpdateEntryInput,
   UpdateEntryResponse
 } from "@/types";
 
-import { GetEntryResponse } from "@/types";
 import { up } from "up-fetch";
 
 export const api = up(fetch, () => ({
@@ -50,5 +51,13 @@ export async function searchEntries(query: SearchInput) {
 
 export async function getEntryById(id: string) {
   const res = await api<GetEntryResponse>(`/entries/${id}`);
+  return res;
+}
+
+export async function getYearAtGlance(year?: number, signal?: AbortSignal) {
+  const res = await api<GetYearAtGlanceResponse>("/entries/year-at-glance", {
+    params: { year },
+    signal
+  });
   return res;
 }
