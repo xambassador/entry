@@ -1,13 +1,12 @@
 import { cn } from "@/lib/cn";
 
-import { Ribbon } from "./ribbon";
-
 type Props = React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>> & {
   shellProps?: React.HTMLAttributes<HTMLDivElement>;
+  overlay?: React.ReactNode;
 };
 
 export function DiaryCover(props: Props) {
-  const { children, className, shellProps, ...rest } = props;
+  const { children, className, shellProps, overlay, ...rest } = props;
   return (
     <div
       {...rest}
@@ -30,15 +29,7 @@ export function DiaryCover(props: Props) {
           </div>
         </div>
 
-        <div className="absolute top-0 right-7">
-          <Ribbon />
-          <div className="absolute top-3 right-1/2 translate-x-1/2">
-            <button className="relative size-20 rounded-full bg-linear-to-b from-twine to-driftwood shadow-xl">
-              <span className="absolute inset-1 border-2 border-dashed border-white rounded-full" />
-              <span>2026</span>
-            </button>
-          </div>
-        </div>
+        {overlay}
       </div>
     </div>
   );
