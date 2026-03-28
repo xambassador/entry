@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WriteRouteImport } from './routes/write'
 import { Route as EntriesRouteImport } from './routes/entries'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EntriesIdRouteImport } from './routes/entries_.$id'
 
 const WriteRoute = WriteRouteImport.update({
   id: '/write',
@@ -28,35 +29,44 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EntriesIdRoute = EntriesIdRouteImport.update({
+  id: '/entries_/$id',
+  path: '/entries/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/entries': typeof EntriesRoute
   '/write': typeof WriteRoute
+  '/entries/$id': typeof EntriesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/entries': typeof EntriesRoute
   '/write': typeof WriteRoute
+  '/entries/$id': typeof EntriesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/entries': typeof EntriesRoute
   '/write': typeof WriteRoute
+  '/entries_/$id': typeof EntriesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/entries' | '/write'
+  fullPaths: '/' | '/entries' | '/write' | '/entries/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/entries' | '/write'
-  id: '__root__' | '/' | '/entries' | '/write'
+  to: '/' | '/entries' | '/write' | '/entries/$id'
+  id: '__root__' | '/' | '/entries' | '/write' | '/entries_/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EntriesRoute: typeof EntriesRoute
   WriteRoute: typeof WriteRoute
+  EntriesIdRoute: typeof EntriesIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/entries_/$id': {
+      id: '/entries_/$id'
+      path: '/entries/$id'
+      fullPath: '/entries/$id'
+      preLoaderRoute: typeof EntriesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EntriesRoute: EntriesRoute,
   WriteRoute: WriteRoute,
+  EntriesIdRoute: EntriesIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

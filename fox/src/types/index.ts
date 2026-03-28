@@ -64,3 +64,17 @@ export interface GetSearchEntriesResponse {
   limit: number;
   offset: number;
 }
+
+export interface GetEntryResponse {
+  content: string;
+  id: string;
+  user_id: string;
+  date: string;
+  title: string;
+  mood: string;
+  emoji: string;
+  word_count: number;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}

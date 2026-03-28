@@ -1,5 +1,7 @@
 import type { Entry } from "@/types";
 
+import { Link } from "@tanstack/react-router";
+
 function getDayName(dateString: string) {
   const date = new Date(dateString);
   return { dayName: date.toLocaleDateString("en-US", { weekday: "short" }), day: date.getDate() };
@@ -7,13 +9,10 @@ function getDayName(dateString: string) {
 
 export function EntryRow({ entry }: { entry: Entry }) {
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <Link
+      to="/entries/$id"
+      params={{ id: entry.id }}
       className="group cursor-pointer flex items-baseline gap-2 entry-row hover:bg-gilt-glow rounded px-1 relative focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gilt/40 focus-visible:rounded"
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") e.currentTarget.click();
-      }}
     >
       <span className="text-base text-ink-secondary group-hover:text-ink transition-colors duration-200 truncate min-w-0 shrink">
         {entry.title}
@@ -32,6 +31,6 @@ export function EntryRow({ entry }: { entry: Entry }) {
         <span className="text-ink-faint text-sm mr-1">{getDayName(entry.date).dayName}</span>
         {getDayName(entry.date).day}
       </span>
-    </div>
+    </Link>
   );
 }

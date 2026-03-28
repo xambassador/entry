@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Hash } from "lucide-react";
 
 export function Tags() {
   const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
+  const ref = useRef<HTMLInputElement>(null);
 
   function handleAddTag() {
+    const tagInput = ref.current?.value || "";
     if (tagInput.trim() && !tags.includes(tagInput.trim().toLowerCase())) {
       setTags([...tags, tagInput.trim().toLowerCase()]);
-      setTagInput("");
+      if (ref.current) {
+        ref.current.value = "";
+      }
     }
   }
 
@@ -32,13 +35,17 @@ export function Tags() {
           </span>
         ))}
         <input
+          ref={ref}
           type="text"
-          value={tagInput}
-          onChange={(e) => setTagInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
               handleAddTag();
+            }
+
+            if (e.key === "Backspace" && !ref.current?.value && tags.length) {
+              e.preventDefault();
+              handleRemoveTag(tags[tags.length - 1]);
             }
           }}
           placeholder="add tag..."

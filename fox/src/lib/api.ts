@@ -7,6 +7,7 @@ import type {
   UpdateEntryResponse
 } from "@/types";
 
+import { GetEntryResponse } from "@/types";
 import { up } from "up-fetch";
 
 export const api = up(fetch, () => ({
@@ -44,5 +45,10 @@ export async function searchEntries(query: SearchInput) {
   const res = await api<GetSearchEntriesResponse>("/entries/search", {
     params: query
   });
+  return res;
+}
+
+export async function getEntryById(id: string) {
+  const res = await api<GetEntryResponse>(`/entries/${id}`);
   return res;
 }

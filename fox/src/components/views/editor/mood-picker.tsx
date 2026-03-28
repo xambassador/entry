@@ -1,13 +1,11 @@
 import type { Mood } from "@/types";
 
+import { useEffect, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 
 import { cn } from "@/lib/cn";
 
-type Props = React.ComponentProps<typeof Popover.Root> & {
-  mood: Mood;
-  onMoodChange: (mood: Mood) => void;
-};
+import { updateMood, useMood } from "./store";
 
 const MOOD_COLORS: Record<string, string> = {
   joyful: "#F5D45E",
@@ -28,6 +26,7 @@ const MOOD_EMOJI: Record<string, string> = {
   reflective: "🤔",
   anxious: "😰",
   grateful: "🙏",
+  great: "🙏",
   creative: "✨",
   tired: "😴",
   excited: "🎉",
@@ -48,10 +47,19 @@ const ALL_MOODS: Mood[] = [
   "peaceful"
 ];
 
-export function MoodPicker(props: Props) {
-  const { mood, onMoodChange, ...rest } = props;
+export function MoodPicker(props: { mood?: Mood }) {
+  const { mood: initialMood } = props;
+  const mood = useMood();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!initialMood) return;
+    updateMood(initialMood);
+    return () => updateMood(null);
+  }, [initialMood]);
+
   return (
-    <Popover.Root {...rest}>
+    <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <button className="flex items-center gap-3 cursor-pointer group">
           <div
@@ -84,7 +92,10 @@ export function MoodPicker(props: Props) {
             {ALL_MOODS.map((m) => (
               <button
                 key={m}
-                onClick={() => onMoodChange(m)}
+                onClick={() => {
+                  updateMood(m);
+                  setOpen(false);
+                }}
                 className={cn(
                   "flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 cursor-pointer",
                   mood === m ? "bg-gilt/15 ring-1 ring-gilt/30" : "hover:bg-journal-hover"

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 import { DiaryCover } from "@/components/diary-cover";
 import { EmptyState } from "@/components/views/entries/empty";
