@@ -256,6 +256,42 @@ func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) ListEntries(w http.ResponseWriter, r *http.Request) {
+	m := r.URL.Query().Get("month")
+	y := r.URL.Query().Get("year")
+	var month int
+	var year int
+
+	if m != "" {
+		var err error
+		month, err = strconv.Atoi(m)
+		if err != nil || month < 1 || month > 12 {
+			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_month", "Month must be a number between 1 and 12"))
+			return
+		}
+	}
+
+	if m == "" {
+		month = int(time.Now().UTC().Month())
+	}
+
+	if y != "" {
+		var err error
+		year, err = strconv.Atoi(y)
+		if err != nil {
+			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_year", "Year must be a valid number"))
+			return
+		}
+
+		if year > time.Now().UTC().Year() {
+			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_year", "Year must not be in the future"))
+			return
+		}
+	}
+
+	if y == "" {
+		year = time.Now().UTC().Year()
+	}
+
 	userID := defaultUserID
 
 	limit := a.config.DefaultLimit
@@ -263,21 +299,21 @@ func (a *API) ListEntries(w http.ResponseWriter, r *http.Request) {
 
 	if raw := r.URL.Query().Get("limit"); raw != "" {
 		parsed, err := strconv.Atoi(raw)
-		if err != nil || parsed < 1 {
+		if err != nil {
 			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_limit", "Limit must be a positive integer"))
 			return
 		}
-		if parsed > a.config.MaxLimit {
-			parsed = a.config.MaxLimit
-		}
-		limit = parsed
+		limit = utils.Clamp(parsed, 1, a.config.MaxLimit)
 	}
 
 	if raw := r.URL.Query().Get("offset"); raw != "" {
 		parsed, err := strconv.Atoi(raw)
-		if err != nil || parsed < 0 {
+		if err != nil {
 			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_offset", "Offset must be a non-negative integer"))
 			return
+		}
+		if parsed < 0 {
+			parsed = 0
 		}
 		offset = parsed
 	}
@@ -286,6 +322,8 @@ func (a *API) ListEntries(w http.ResponseWriter, r *http.Request) {
 		UserID: userID,
 		Limit:  limit,
 		Offset: offset,
+		Month:  month,
+		Year:   year,
 	})
 	if err != nil {
 		log.Printf("error listing entries: %v", err)

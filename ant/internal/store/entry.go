@@ -84,6 +84,8 @@ type ListEntriesParams struct {
 	UserID string
 	Limit  int
 	Offset int
+	Month  int
+	Year   int
 }
 
 type ListEntriesResult struct {
@@ -95,7 +97,19 @@ type ListEntriesResult struct {
 
 func (s *EntryStore) List(p ListEntriesParams) (*ListEntriesResult, error) {
 	var total int
-	err := s.db.QueryRow(`SELECT COUNT(*) FROM entries WHERE user_id = ?`, p.UserID).Scan(&total)
+	query := `SELECT COUNT(*) FROM entries WHERE user_id = ?`
+	args := []any{p.UserID}
+	if p.Month != 0 {
+		query += " AND strftime('%m', date) = ?"
+		args = append(args, fmt.Sprintf("%02d", p.Month))
+	}
+
+	if p.Year != 0 {
+		query += " AND strftime('%Y', date) = ?"
+		args = append(args, fmt.Sprintf("%04d", p.Year))
+	}
+
+	err := s.db.QueryRow(query, args...).Scan(&total)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count entries: %w", err)
 	}
@@ -103,10 +117,10 @@ func (s *EntryStore) List(p ListEntriesParams) (*ListEntriesResult, error) {
 	rows, err := s.db.Query(`
 		SELECT id, user_id, date, title, mood, emoji, file_path, word_count, tags, created_at, updated_at
 		FROM entries
-		WHERE user_id = ?
+		WHERE user_id = ? AND strftime('%m', date) = ? AND strftime('%Y', date) = ?
 		ORDER BY date DESC
 		LIMIT ? OFFSET ?`,
-		p.UserID, p.Limit, p.Offset,
+		p.UserID, fmt.Sprintf("%02d", p.Month), fmt.Sprintf("%04d", p.Year), p.Limit, p.Offset,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list entries: %w", err)
