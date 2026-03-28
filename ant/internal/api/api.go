@@ -42,6 +42,7 @@ func NewAPI(cfg *config.Config, db *sql.DB) *API {
 		r.Post("/", api.CreateEntry)
 		r.Get("/", api.ListEntries)
 		r.Get("/search", api.SearchEntries)
+		r.Get("/year-at-glance", api.YearAtGlance)
 		r.Get("/{id}", api.GetEntry)
 		r.Put("/{id}", api.UpdateEntry)
 	})

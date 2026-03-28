@@ -393,3 +393,39 @@ func (a *API) SearchEntries(w http.ResponseWriter, r *http.Request) {
 
 	utils.WriteJSON(w, http.StatusOK, result)
 }
+
+func (a *API) YearAtGlance(w http.ResponseWriter, r *http.Request) {
+	userID := defaultUserID
+	y := r.URL.Query().Get("year")
+	var year int
+
+	if y != "" {
+		var err error
+		year, err = strconv.Atoi(y)
+		if err != nil {
+			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_year", "Year must be a valid number"))
+			return
+		}
+
+		if year > time.Now().UTC().Year() {
+			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_year", "Year must not be in the future"))
+			return
+		}
+	}
+
+	if y == "" {
+		year = time.Now().UTC().Year()
+	}
+
+	result, err := a.entryStore.YearAtGlance(store.YearAtGlanceParams{
+		UserID: userID,
+		Year:   year,
+	})
+	if err != nil {
+		log.Printf("error getting year at glance: %v", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to get year at glance"))
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, result)
+}

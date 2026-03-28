@@ -296,3 +296,59 @@ func (s *EntryStore) ExistsByDate(userID, date string) (bool, error) {
 	}
 	return count > 0, nil
 }
+
+type YearAtGlanceParams struct {
+	UserID string
+	Year   int
+}
+
+type YearAtGlanceEntry struct {
+	ID    string `json:"id"`
+	Date  string `json:"date"`
+	Emoji string `json:"emoji"`
+}
+
+type YearAtGlanceResult struct {
+	Entries []YearAtGlanceEntry `json:"entries"`
+	Total   int                 `json:"total"`
+}
+
+func (s *EntryStore) YearAtGlance(p YearAtGlanceParams) (*YearAtGlanceResult, error) {
+	var total int
+	err := s.db.QueryRow(`
+		SELECT COUNT(*) FROM entries
+		WHERE user_id = ? AND strftime('%Y', date) = ?`,
+		p.UserID, fmt.Sprintf("%04d", p.Year),
+	).Scan(&total)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count entries for year: %w", err)
+	}
+
+	rows, err := s.db.Query(`
+		SELECT id, date, emoji FROM entries
+		WHERE user_id = ? AND strftime('%Y', date) = ?
+		ORDER BY date DESC`,
+		p.UserID, fmt.Sprintf("%04d", p.Year),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query entries for year: %w", err)
+	}
+	defer rows.Close()
+
+	entries := []YearAtGlanceEntry{}
+	for rows.Next() {
+		var e YearAtGlanceEntry
+		if err := rows.Scan(&e.ID, &e.Date, &e.Emoji); err != nil {
+			return nil, fmt.Errorf("failed to scan entry: %w", err)
+		}
+		entries = append(entries, e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating entries for year: %w", err)
+	}
+
+	return &YearAtGlanceResult{
+		Entries: entries,
+		Total:   total,
+	}, nil
+}
