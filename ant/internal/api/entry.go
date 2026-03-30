@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -16,47 +15,10 @@ import (
 
 const defaultUserID = "default"
 
-var validMoods = map[string]bool{
-	"":         true,
-	"great":    true,
-	"good":     true,
-	"okay":     true,
-	"bad":      true,
-	"terrible": true,
-}
-
-type createEntryRequest struct {
-	Date    string   `json:"date"`
-	Title   string   `json:"title"`
-	Mood    string   `json:"mood"`
-	Emoji   string   `json:"emoji"`
-	Tags    []string `json:"tags"`
-	Content string   `json:"content"`
-}
-
-func (r *createEntryRequest) validate() (string, string) {
-	if strings.TrimSpace(r.Title) == "" {
-		return "missing_title", "Title is required"
-	}
-	if strings.TrimSpace(r.Date) == "" {
-		return "missing_date", "Date is required"
-	}
-	if _, err := time.Parse("2006-01-02", r.Date); err != nil {
-		return "invalid_date", "Date must be in YYYY-MM-DD format"
-	}
-	if !validMoods[r.Mood] {
-		return "invalid_mood", "Mood must be one of: great, good, okay, bad, terrible"
-	}
-	if strings.TrimSpace(r.Content) == "" {
-		return "missing_content", "Content is required"
-	}
-	return "", ""
-}
-
 func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	body := &createEntryRequest{}
 	if err := json.NewDecoder(r.Body).Decode(body); err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_request_body", "Invalid request body"))
+		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse(ErrInvalidRequestBody, "Invalid request body"))
 		return
 	}
 
@@ -70,11 +32,11 @@ func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	exists, err := a.entryStore.ExistsByDate(userID, body.Date)
 	if err != nil {
 		log.Printf("error checking entry existence: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to check existing entry"))
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to check existing entry"))
 		return
 	}
 	if exists {
-		utils.WriteJSON(w, http.StatusConflict, utils.NewErrorResponse("entry_exists", "An entry already exists for this date"))
+		utils.WriteJSON(w, http.StatusConflict, utils.NewErrorResponse(ErrEntryAlreadyExists, "An entry already exists for this date"))
 		return
 	}
 
@@ -99,7 +61,7 @@ func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	relPath, err := markdown.WriteEntry(a.config.DataDir, userID, fm, body.Content)
 	if err != nil {
 		log.Printf("error writing markdown file: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to write entry file"))
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to write entry file"))
 		return
 	}
 
@@ -115,7 +77,7 @@ func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error creating entry in db: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to create entry"))
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to create entry"))
 		return
 	}
 
@@ -139,18 +101,18 @@ func (a *API) GetEntry(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("error getting entry: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to get entry"))
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to get entry"))
 		return
 	}
 	if entry == nil {
-		utils.WriteJSON(w, http.StatusNotFound, utils.NewErrorResponse("entry_not_found", "Entry not found"))
+		utils.WriteJSON(w, http.StatusNotFound, utils.NewErrorResponse(ErrEntryNotFound, "Entry not found"))
 		return
 	}
 
 	content, err := markdown.GetEntryContent(a.config.DataDir, defaultUserID, entry.FilePath)
 	if err != nil {
 		log.Printf("error getting entry content: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to get entry content"))
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to get entry content"))
 		return
 	}
 
@@ -162,46 +124,29 @@ func (a *API) GetEntry(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusOK, response)
 }
 
-type updateEntryRequest struct {
-	Title   string   `json:"title"`
-	Mood    string   `json:"mood"`
-	Emoji   string   `json:"emoji"`
-	Tags    []string `json:"tags"`
-	Content string   `json:"content"`
-}
-
-func (r *updateEntryRequest) validate() (string, string) {
-	if !validMoods[r.Mood] {
-		return "invalid_mood", "Mood must be one of: great, good, okay, bad, terrible"
-	}
-	if strings.TrimSpace(r.Content) == "" {
-		return "missing_content", "Content is required"
-	}
-	return "", ""
-}
-
 func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	entry, err := a.entryStore.GetByID(defaultUserID, id)
-	if err != nil {
-		log.Printf("error getting entry: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to get entry"))
-		return
-	}
-	if entry == nil {
-		utils.WriteJSON(w, http.StatusNotFound, utils.NewErrorResponse("entry_not_found", "Entry not found"))
-		return
-	}
-
 	body := &updateEntryRequest{}
 	if err := json.NewDecoder(r.Body).Decode(body); err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_request_body", "Invalid request body"))
+		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse(ErrInvalidRequestBody, "Invalid request body"))
 		return
 	}
 
 	if code, msg := body.validate(); code != "" {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse(code, msg))
+		return
+	}
+
+	entry, err := a.entryStore.GetByID(defaultUserID, id)
+	if err != nil {
+		log.Printf("error getting entry: %v", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to get entry"))
+		return
+	}
+
+	if entry == nil {
+		utils.WriteJSON(w, http.StatusNotFound, utils.NewErrorResponse(ErrEntryNotFound, "Entry not found"))
 		return
 	}
 
@@ -227,7 +172,7 @@ func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 	relPath, err := markdown.WriteEntry(a.config.DataDir, defaultUserID, fm, body.Content)
 	if err != nil {
 		log.Printf("error writing markdown file: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to write entry file"))
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to write entry file"))
 		return
 	}
 
@@ -243,7 +188,7 @@ func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error updating entry in db: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to update entry"))
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to update entry"))
 		return
 	}
 
@@ -258,64 +203,25 @@ func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 func (a *API) ListEntries(w http.ResponseWriter, r *http.Request) {
 	m := r.URL.Query().Get("month")
 	y := r.URL.Query().Get("year")
-	var month int
-	var year int
 
-	if m != "" {
-		var err error
-		month, err = strconv.Atoi(m)
-		if err != nil || month < 1 || month > 12 {
-			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_month", "Month must be a number between 1 and 12"))
-			return
-		}
+	month, err := getMonthFromQuery(m)
+	if err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse(ErrInvalidMonth, err.Error()))
+		return
 	}
 
-	if m == "" {
-		month = int(time.Now().UTC().Month())
-	}
-
-	if y != "" {
-		var err error
-		year, err = strconv.Atoi(y)
-		if err != nil {
-			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_year", "Year must be a valid number"))
-			return
-		}
-
-		if year > time.Now().UTC().Year() {
-			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_year", "Year must not be in the future"))
-			return
-		}
-	}
-
-	if y == "" {
-		year = time.Now().UTC().Year()
+	year, err := getYearFromQuery(y)
+	if err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse(ErrInvalidYear, err.Error()))
+		return
 	}
 
 	userID := defaultUserID
 
-	limit := a.config.DefaultLimit
-	offset := 0
-
-	if raw := r.URL.Query().Get("limit"); raw != "" {
-		parsed, err := strconv.Atoi(raw)
-		if err != nil {
-			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_limit", "Limit must be a positive integer"))
-			return
-		}
-		limit = utils.Clamp(parsed, 1, a.config.MaxLimit)
-	}
-
-	if raw := r.URL.Query().Get("offset"); raw != "" {
-		parsed, err := strconv.Atoi(raw)
-		if err != nil {
-			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_offset", "Offset must be a non-negative integer"))
-			return
-		}
-		if parsed < 0 {
-			parsed = 0
-		}
-		offset = parsed
+	limit, offset, err := getLimitAndOffsetFromQuery(r, a.config.DefaultLimit, a.config.MaxLimit)
+	if err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse(ErrInvalidLimitOrOffset, err.Error()))
+		return
 	}
 
 	result, err := a.entryStore.List(store.ListEntriesParams{
@@ -327,7 +233,7 @@ func (a *API) ListEntries(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error listing entries: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to list entries"))
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to list entries"))
 		return
 	}
 
@@ -350,32 +256,14 @@ func (a *API) SearchEntries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if q == "" && len(tags) == 0 {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("missing_query", "At least one of 'q' (title search) or 'tags' must be provided"))
+		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse(ErrMissingQuery, "At least one of 'q' (title search) or 'tags' must be provided"))
 		return
 	}
 
-	limit := a.config.DefaultLimit
-	offset := 0
-
-	if raw := r.URL.Query().Get("limit"); raw != "" {
-		parsed, err := strconv.Atoi(raw)
-		if err != nil || parsed < 1 {
-			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_limit", "Limit must be a positive integer"))
-			return
-		}
-		if parsed > a.config.MaxLimit {
-			parsed = a.config.MaxLimit
-		}
-		limit = parsed
-	}
-
-	if raw := r.URL.Query().Get("offset"); raw != "" {
-		parsed, err := strconv.Atoi(raw)
-		if err != nil || parsed < 0 {
-			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_offset", "Offset must be a non-negative integer"))
-			return
-		}
-		offset = parsed
+	limit, offset, err := getLimitAndOffsetFromQuery(r, a.config.DefaultLimit, a.config.MaxLimit)
+	if err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse(ErrInvalidLimitOrOffset, err.Error()))
+		return
 	}
 
 	result, err := a.entryStore.Search(store.SearchEntriesParams{
@@ -387,7 +275,7 @@ func (a *API) SearchEntries(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error searching entries: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to search entries"))
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to search entries"))
 		return
 	}
 
@@ -397,24 +285,11 @@ func (a *API) SearchEntries(w http.ResponseWriter, r *http.Request) {
 func (a *API) YearAtGlance(w http.ResponseWriter, r *http.Request) {
 	userID := defaultUserID
 	y := r.URL.Query().Get("year")
-	var year int
 
-	if y != "" {
-		var err error
-		year, err = strconv.Atoi(y)
-		if err != nil {
-			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_year", "Year must be a valid number"))
-			return
-		}
-
-		if year > time.Now().UTC().Year() {
-			utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse("invalid_year", "Year must not be in the future"))
-			return
-		}
-	}
-
-	if y == "" {
-		year = time.Now().UTC().Year()
+	year, err := getYearFromQuery(y)
+	if err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse(ErrInvalidYear, err.Error()))
+		return
 	}
 
 	result, err := a.entryStore.YearAtGlance(store.YearAtGlanceParams{
@@ -423,7 +298,7 @@ func (a *API) YearAtGlance(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error getting year at glance: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse("internal_error", "Failed to get year at glance"))
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to get year at glance"))
 		return
 	}
 
