@@ -1,9 +1,11 @@
-import { forwardRef, useEffect, useRef, useState } from "react";
+import { forwardRef, lazy, Suspense, useEffect, useRef, useState } from "react";
 import data from "@emoji-mart/data";
-import Picker from "@emoji-mart/react";
 import * as Popover from "@radix-ui/react-popover";
 
 import { updateEmoji, updateMood, useEmoji, useMood } from "./store";
+
+const load = () => import("@emoji-mart/react");
+const Picker = lazy(load);
 
 interface EmojiSelection {
   native: string;
@@ -40,6 +42,8 @@ export function MoodPicker(props: { mood?: string; emoji?: string }) {
             <button
               className="wax-seal cursor-pointer shrink-0 transition-transform duration-150 active:scale-95"
               aria-label="Pick an emoji"
+              onMouseEnter={load}
+              onFocus={load}
             >
               <span className="text-base leading-none">{hasEmoji ? emoji : "?"}</span>
             </button>
@@ -49,17 +53,23 @@ export function MoodPicker(props: { mood?: string; emoji?: string }) {
             <Popover.Content
               sideOffset={10}
               align="start"
-              className="emoji-picker-popover z-50 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden border border-gilt-dim"
+              className="emoji-picker-popover z-50 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden border border-gilt-dim origin-(--radix-popover-content-transform-origin) data-[state=open]:animate-popover-in data-[state=closed]:animate-popover-out"
             >
-              <Picker
-                data={data}
-                onEmojiSelect={handleEmojiSelect}
-                theme="dark"
-                previewPosition="none"
-                skinTonePosition="none"
-                set="native"
-                autoFocus
-              />
+              <Suspense
+                fallback={
+                  <div className="w-72 h-72 flex items-center justify-center bg-journal-surface">Loading...</div>
+                }
+              >
+                <Picker
+                  data={data}
+                  onEmojiSelect={handleEmojiSelect}
+                  theme="dark"
+                  previewPosition="none"
+                  skinTonePosition="none"
+                  set="native"
+                  autoFocus
+                />
+              </Suspense>
               <Popover.Arrow className="fill-journal-surface" />
             </Popover.Content>
           </Popover.Portal>
