@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS entries (
 	UNIQUE(user_id, date)
 );
 
+
 CREATE INDEX IF NOT EXISTS idx_entries_user_date ON entries(user_id, date);
 CREATE INDEX IF NOT EXISTS idx_entries_date ON entries(date);
 

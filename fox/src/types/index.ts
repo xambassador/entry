@@ -1,16 +1,3 @@
-export type Mood =
-  | "joyful"
-  | "calm"
-  | "reflective"
-  | "anxious"
-  | "grateful"
-  | "creative"
-  | "tired"
-  | "excited"
-  | "melancholy"
-  | "peaceful"
-  | null;
-
 export interface GetEntriesResponse {
   entries: Entry[];
   total: number;

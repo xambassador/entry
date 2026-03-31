@@ -1,114 +1,90 @@
-import type { Mood } from "@/types";
-
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 import * as Popover from "@radix-ui/react-popover";
 
-import { cn } from "@/lib/cn";
+import { updateEmoji, updateMood, useEmoji, useMood } from "./store";
 
-import { updateMood, useMood } from "./store";
+interface EmojiSelection {
+  native: string;
+}
 
-const MOOD_COLORS: Record<string, string> = {
-  joyful: "#F5D45E",
-  calm: "#5BC4BE",
-  reflective: "#A893D4",
-  anxious: "#E8836A",
-  grateful: "#E0A86E",
-  creative: "#F0A0E0",
-  tired: "#8A9AAE",
-  excited: "#FF7A7A",
-  melancholy: "#6E94B8",
-  peaceful: "#7ED4A0"
-};
-
-export const MOOD_EMOJI: Record<string, string> = {
-  joyful: "😊",
-  calm: "😌",
-  reflective: "🤔",
-  anxious: "😰",
-  grateful: "🙏",
-  great: "🙏",
-  creative: "✨",
-  tired: "😴",
-  excited: "🎉",
-  melancholy: "🌧️",
-  peaceful: "🕊️"
-};
-
-const ALL_MOODS: Mood[] = [
-  "joyful",
-  "calm",
-  "reflective",
-  "anxious",
-  "grateful",
-  "creative",
-  "tired",
-  "excited",
-  "melancholy",
-  "peaceful"
-];
-
-export function MoodPicker(props: { mood?: Mood }) {
-  const { mood: initialMood } = props;
-  const mood = useMood();
+export function MoodPicker(props: { mood?: string; emoji?: string }) {
+  const { mood: initialMood, emoji: initialEmoji } = props;
+  const emoji = useEmoji();
   const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const hasEmoji = emoji.length > 0;
+
+  function handleEmojiSelect(selection: EmojiSelection) {
+    updateEmoji(selection.native);
+    setOpen(false);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }
 
   useEffect(() => {
-    if (!initialMood) return;
-    updateMood(initialMood);
-    return () => updateMood(null);
-  }, [initialMood]);
+    if (initialMood) updateMood(initialMood);
+    if (initialEmoji) updateEmoji(initialEmoji);
+    return () => {
+      updateMood("");
+      updateEmoji("");
+    };
+  }, [initialMood, initialEmoji]);
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger asChild>
-        <button className="flex items-center gap-3 cursor-pointer group">
-          <div
-            className="wax-seal"
-            style={
-              mood
-                ? {
-                    background: `radial-gradient(circle at 35% 35%, ${MOOD_COLORS[mood]}CC 0%, ${MOOD_COLORS[mood]}99 60%, ${MOOD_COLORS[mood]}66 100%)`
-                  }
-                : undefined
-            }
-          >
-            <span className="text-[14px]">{mood ? MOOD_EMOJI[mood] : "?"}</span>
-          </div>
-          {mood ? (
-            <span className="text-sm capitalize text-ink-muted font-medium">Feeling {mood}</span>
-          ) : (
-            <span className="text-sm italic text-ink-faint">How are you feeling?</span>
-          )}
-        </button>
-      </Popover.Trigger>
+    <div>
+      {label}
+      <div className="flex items-center gap-3">
+        <Popover.Root open={open} onOpenChange={setOpen}>
+          <Popover.Trigger asChild>
+            <button
+              className="wax-seal cursor-pointer shrink-0 transition-transform duration-150 active:scale-95"
+              aria-label="Pick an emoji"
+            >
+              <span className="text-base leading-none">{hasEmoji ? emoji : "?"}</span>
+            </button>
+          </Popover.Trigger>
 
-      <Popover.Portal>
-        <Popover.Content
-          sideOffset={8}
-          className="bg-journal-elevated border border-border-strong rounded-xl p-4 shadow-2xl shadow-black/40 z-50"
-        >
-          <p className="text-sm font-mono text-ink-muted tracking-wider uppercase mb-3">How are you feeling?</p>
-          <div className="grid grid-cols-5 gap-2">
-            {ALL_MOODS.map((m) => (
-              <button
-                key={m}
-                onClick={() => {
-                  updateMood(m);
-                  setOpen(false);
-                }}
-                className={cn(
-                  "flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 cursor-pointer",
-                  mood === m ? "bg-gilt/15 ring-1 ring-gilt/30" : "hover:bg-journal-hover"
-                )}
-              >
-                <span className="text-lg">{MOOD_EMOJI[m!]}</span>
-                <span className="text-xs font-mono text-ink-muted capitalize">{m}</span>
-              </button>
-            ))}
-          </div>
-          <Popover.Arrow className="fill-journal-elevated" />
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+          <Popover.Portal>
+            <Popover.Content
+              sideOffset={10}
+              align="start"
+              className="emoji-picker-popover z-50 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden border border-gilt-dim"
+            >
+              <Picker
+                data={data}
+                onEmojiSelect={handleEmojiSelect}
+                theme="dark"
+                previewPosition="none"
+                skinTonePosition="none"
+                set="native"
+                autoFocus
+              />
+              <Popover.Arrow className="fill-journal-surface" />
+            </Popover.Content>
+          </Popover.Portal>
+        </Popover.Root>
+        <MoodInput ref={inputRef} />
+      </div>
+    </div>
   );
 }
+
+const MoodInput = forwardRef<HTMLInputElement>(function MoodInput(_, ref) {
+  const mood = useMood();
+  return (
+    <div className="min-w-0 flex-1">
+      <input
+        type="text"
+        ref={ref}
+        value={mood}
+        onChange={(e) => updateMood(e.target.value)}
+        placeholder="How are you feeling?"
+        maxLength={80}
+        className="w-full bg-transparent text-xs tracking-wider text-ink-muted caret-gilt placeholder:text-ink-faint placeholder:italic focus:outline-none"
+      />
+    </div>
+  );
+});
+
+const label = <p className="text-[12px] tracking-widest uppercase mb-2 text-ink-faint">Mood</p>;

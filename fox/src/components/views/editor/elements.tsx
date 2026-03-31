@@ -2,9 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
 import { Quote } from "@/components/quote";
-import { Tags } from "@/components/views/editor/tags";
-
-export const tags = <Tags />;
 
 export const backToEntries = (
   <Link
@@ -29,7 +26,5 @@ export const diaryFold = (
 export const glitDimBorder = <div className="w-16 mb-6 h-px bg-gilt-dim" />;
 
 export const diaryCurl = <div className="open-diary-curl" />;
-
-export const moodText = <p className="text-[12px] tracking-widest uppercase mb-3 text-ink-faint">Mood</p>;
 
 export const quote = <Quote />;

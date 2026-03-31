@@ -6,8 +6,7 @@ import { Check, Loader2, Save } from "lucide-react";
 import { createEntry, updateEntry } from "@/lib/api";
 import { cn } from "@/lib/cn";
 
-import { MOOD_EMOJI } from "./mood-picker";
-import { useContent, useMood, useTags, useTitle } from "./store";
+import { useContent, useEmoji, useMood, useTags, useTitle } from "./store";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 type Props = { entry?: GetEntryResponse };
@@ -18,6 +17,7 @@ export function SaveButton({ entry }: Props) {
   const title = useTitle();
   const content = useContent();
   const mood = useMood();
+  const emoji = useEmoji();
   const tags = useTags();
 
   const isEdit = Boolean(entry?.id);
@@ -25,14 +25,12 @@ export function SaveButton({ entry }: Props) {
   const handleSave = useCallback(() => {
     startTransition(async () => {
       const today = new Date().toISOString().split("T")[0];
-      const moodValue = mood ?? "";
-      const emoji = mood ? (MOOD_EMOJI[mood] ?? "") : "";
       try {
         if (isEdit && entry?.id) {
           await updateEntry(entry.id, {
             title,
             content,
-            mood: moodValue,
+            mood,
             emoji,
             tags,
             date: entry.date
@@ -41,7 +39,7 @@ export function SaveButton({ entry }: Props) {
           await createEntry({
             title,
             content,
-            mood: moodValue,
+            mood,
             emoji,
             tags,
             date: today
@@ -54,7 +52,7 @@ export function SaveButton({ entry }: Props) {
         setTimeout(() => setState("idle"), 2500);
       }
     });
-  }, [title, content, mood, tags, isEdit, entry]);
+  }, [title, content, mood, emoji, tags, isEdit, entry]);
 
   const label = {
     idle: isEdit ? "Save changes" : "Save entry",

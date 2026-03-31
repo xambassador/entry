@@ -10,15 +10,6 @@ import (
 	"github.com/xambassador/entry/internal/utils"
 )
 
-var validMoods = map[string]bool{
-	"":         true,
-	"great":    true,
-	"good":     true,
-	"okay":     true,
-	"bad":      true,
-	"terrible": true,
-}
-
 type createEntryRequest struct {
 	Date    string   `json:"date"`
 	Title   string   `json:"title"`
@@ -38,9 +29,6 @@ func (r *createEntryRequest) validate() (string, string) {
 	if _, err := time.Parse("2006-01-02", r.Date); err != nil {
 		return "invalid_date", "Date must be in YYYY-MM-DD format"
 	}
-	if !validMoods[r.Mood] {
-		return "invalid_mood", "Mood must be one of: great, good, okay, bad, terrible"
-	}
 	if strings.TrimSpace(r.Content) == "" {
 		return "missing_content", "Content is required"
 	}
@@ -56,9 +44,6 @@ type updateEntryRequest struct {
 }
 
 func (r *updateEntryRequest) validate() (string, string) {
-	if !validMoods[r.Mood] {
-		return "invalid_mood", "Mood must be one of: great, good, okay, bad, terrible"
-	}
 	if strings.TrimSpace(r.Content) == "" {
 		return "missing_content", "Content is required"
 	}

@@ -32,6 +32,7 @@ func NewAPI(cfg *config.Config, db *sql.DB) *API {
 	router.Use(middleware.Timeout(cfg.RequestTimeout))
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"https://*", "http://*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 	}))
 
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {

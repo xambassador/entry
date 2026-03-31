@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -75,8 +76,8 @@ func Test_CreateEntry_Success(t *testing.T) {
 	reqBody := map[string]any{
 		"title":   "My First Entry",
 		"date":    "2026-01-15",
-		"mood":    "great",
-		"emoji":   "😀",
+		"mood":    "Joyful and energetic",
+		"emoji":   "😊",
 		"tags":    []string{"work", "focus"},
 		"content": "Had a productive day writing Go code.",
 	}
@@ -85,6 +86,11 @@ func Test_CreateEntry_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, rec.Code)
 	assert.Equal(t, "application/json; charset=utf-8", rec.Header().Get("Content-Type"))
+
+	var entry map[string]any
+	decodeBody(t, rec, &entry)
+	assert.Equal(t, "Joyful and energetic", entry["mood"])
+	assert.Equal(t, "😊", entry["emoji"])
 }
 
 func Test_CreateEntry_Success_WordCountCalculation(t *testing.T) {
@@ -159,38 +165,35 @@ func Test_CreateEntry_InvalidDateFormat(t *testing.T) {
 	}
 }
 
-func Test_CreateEntry_InvalidMood(t *testing.T) {
+func Test_CreateEntry_AnyMoodIsAccepted(t *testing.T) {
 	t.Parallel()
 
-	invalidMoods := []string{
+	moods := []string{
 		"happy",
 		"sad",
 		"GREAT",
-		"Good",
 		"meh",
 		"neutral",
+		"😊",
+		"feeling great today!",
 		" great",
 		"great ",
+		"",
 	}
 
-	for _, mood := range invalidMoods {
-		t.Run(mood, func(t *testing.T) {
+	for i, mood := range moods {
+		t.Run("mood:"+mood, func(t *testing.T) {
 			t.Parallel()
-
 			srv := newTestServer(t)
-
+			date := fmt.Sprintf("2026-06-%02d", i+1)
 			rec := postEntry(t, srv, map[string]any{
-				"title":   "My First Entry",
-				"date":    "2026-06-01",
+				"title":   "Mood test entry",
+				"date":    date,
 				"mood":    mood,
-				"content": "Testing invalid mood.",
+				"content": "Any mood should be accepted.",
 			})
 
-			assert.Equal(t, http.StatusBadRequest, rec.Code, "mood %q should be rejected", mood)
-
-			var body errorBody
-			decodeBody(t, rec, &body)
-			assert.Equal(t, "invalid_mood", body.Error.Code)
+			assert.Equal(t, http.StatusCreated, rec.Code, "mood %q should be accepted", mood)
 		})
 	}
 }
@@ -350,7 +353,7 @@ func Test_UpdateEntry_Success(t *testing.T) {
 	createRec := postEntry(t, srv, map[string]any{
 		"title":   "My First Entry",
 		"date":    "2026-02-10",
-		"mood":    "good",
+		"mood":    "Calm and focused",
 		"emoji":   "😊",
 		"tags":    []string{"original"},
 		"content": "Original content.",
@@ -362,7 +365,7 @@ func Test_UpdateEntry_Success(t *testing.T) {
 	id := created["id"].(string)
 
 	rec := putEntry(t, srv, id, map[string]any{
-		"mood":    "great",
+		"mood":    "Excited and happy",
 		"emoji":   "🎉",
 		"tags":    []string{"updated", "go"},
 		"content": "Updated content with more words.",
@@ -374,7 +377,7 @@ func Test_UpdateEntry_Success(t *testing.T) {
 	var updated map[string]any
 	decodeBody(t, rec, &updated)
 	assert.Equal(t, id, updated["id"])
-	assert.Equal(t, "great", updated["mood"])
+	assert.Equal(t, "Excited and happy", updated["mood"])
 	assert.Equal(t, "🎉", updated["emoji"])
 	assert.Equal(t, "Updated content with more words.", updated["content"])
 	assert.EqualValues(t, 5, updated["word_count"])

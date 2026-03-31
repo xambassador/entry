@@ -1,4 +1,4 @@
-import type { GetEntryResponse, Mood } from "@/types";
+import type { GetEntryResponse } from "@/types";
 
 import { MoodPicker } from "@/components/views/editor/mood-picker";
 import { Tags } from "@/components/views/editor/tags";
@@ -31,10 +31,7 @@ export function Editor(props: Props) {
               <EntryDate date={entry?.date} />
               {elements.ornament}
               {elements.quote}
-              <div>
-                {elements.moodText}
-                <MoodPicker mood={entry?.mood as Mood} />
-              </div>
+              <MoodPicker mood={entry?.mood} emoji={entry?.emoji} />
               <Tags tags={entry?.tags} />
             </div>
             <div className="relative z-3 flex items-end justify-between mt-6">

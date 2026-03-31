@@ -122,6 +122,16 @@
   opacity: 1;
 }
 
+.emoji-picker-popover em-emoji-picker {
+  --rgb-background: 18, 20, 26;
+  --rgb-input: 26, 29, 37;
+  --rgb-accent: 91, 196, 190;
+  --color-border: var(--color-gilt-dim);
+  --color-border-over: var(--color-gilt);
+  --shadow: none;
+  font-family: "DM Sans", sans-serif;
+}
+
 .wax-seal {
   width: 28px;
   height: 28px;

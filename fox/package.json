@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emoji-mart/data": "^1.2.1",
+    "@emoji-mart/react": "^1.1.1",
     "@nanostores/react": "^1.1.0",
     "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-tooltip": "^1.2.8",
@@ -17,6 +19,7 @@
     "@tanstack/react-router": "^1.163.3",
     "@tanstack/react-router-devtools": "^1.163.3",
     "clsx": "^2.1.1",
+    "emoji-mart": "^5.6.0",
     "lucide-react": "^0.577.0",
     "nanostores": "^1.2.0",
     "react": "^19.2.0",
