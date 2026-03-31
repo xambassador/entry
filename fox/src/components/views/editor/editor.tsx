@@ -1,11 +1,13 @@
 import type { GetEntryResponse, Mood } from "@/types";
 
 import { MoodPicker } from "@/components/views/editor/mood-picker";
+import { Tags } from "@/components/views/editor/tags";
 
 import { EntryDate } from "./date-header";
 import * as elements from "./elements";
 import { CharCount, WordCount } from "./footer";
 import { ContentInput, TitleInput } from "./form-elements";
+import { SaveButton } from "./save-button";
 
 import "./editor.css";
 
@@ -16,7 +18,10 @@ export function Editor(props: Props) {
 
   return (
     <div className="flex flex-col flex-1 gap-5 h-full">
-      {elements.backToEntries}
+      <div className="flex items-center justify-between">
+        {elements.backToEntries}
+        <SaveButton entry={entry} />
+      </div>
       <div className="open-diary overflow-hidden w-full flex-1 min-h-0 flex flex-col relative bg-transparent rounded-3xl">
         {elements.diaryEdgeTop}
         {elements.diaryEdgeBottom}
@@ -30,14 +35,15 @@ export function Editor(props: Props) {
                 {elements.moodText}
                 <MoodPicker mood={entry?.mood as Mood} />
               </div>
-              {elements.tags}
+              <Tags tags={entry?.tags} />
             </div>
-            <div className="relative z-3 flex flex-col gap-2 mt-6">
-              <div className="flex items-center gap-4">
-                <WordCount content={entry?.content} />
-                <CharCount content={entry?.content} />
+            <div className="relative z-3 flex items-end justify-between mt-6">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-4">
+                  <WordCount content={entry?.content} />
+                  <CharCount content={entry?.content} />
+                </div>
               </div>
-              {elements.pageOneText}
             </div>
           </div>
           {elements.diaryFold}
@@ -48,7 +54,6 @@ export function Editor(props: Props) {
               <ContentInput content={entry?.content} />
             </div>
             {elements.diaryCurl}
-            {elements.pageTwoText}
           </div>
         </div>
       </div>

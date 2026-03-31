@@ -1,14 +1,26 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Hash } from "lucide-react";
 
-export function Tags() {
-  const [tags, setTags] = useState<string[]>([]);
+import { updateTags } from "./store";
+
+export function Tags(props: { tags?: string[] }) {
+  const { tags: initialTags } = props;
+  const [tags, setTags] = useState<string[]>(initialTags || []);
   const ref = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const t = initialTags || [];
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTags(t);
+    updateTags(t);
+  }, [initialTags]);
 
   function handleAddTag() {
     const tagInput = ref.current?.value || "";
     if (tagInput.trim() && !tags.includes(tagInput.trim().toLowerCase())) {
-      setTags([...tags, tagInput.trim().toLowerCase()]);
+      const next = [...tags, tagInput.trim().toLowerCase()];
+      setTags(next);
+      updateTags(next);
       if (ref.current) {
         ref.current.value = "";
       }
@@ -16,7 +28,9 @@ export function Tags() {
   }
 
   function handleRemoveTag(tag: string) {
-    setTags(tags.filter((t) => t !== tag));
+    const next = tags.filter((t) => t !== tag);
+    setTags(next);
+    updateTags(next);
   }
 
   return (

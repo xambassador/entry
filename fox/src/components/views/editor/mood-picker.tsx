@@ -20,7 +20,7 @@ const MOOD_COLORS: Record<string, string> = {
   peaceful: "#7ED4A0"
 };
 
-const MOOD_EMOJI: Record<string, string> = {
+export const MOOD_EMOJI: Record<string, string> = {
   joyful: "😊",
   calm: "😌",
   reflective: "🤔",
