@@ -11,17 +11,17 @@ import (
 )
 
 type Entry struct {
-	ID        string   `json:"id"`
-	UserID    string   `json:"user_id"`
-	Date      string   `json:"date"`
-	Title     string   `json:"title"`
-	Mood      string   `json:"mood"`
-	Emoji     string   `json:"emoji"`
-	FilePath  string   `json:"file_path"`
-	WordCount int      `json:"word_count"`
-	Tags      []string `json:"tags"`
-	CreatedAt string   `json:"created_at"`
-	UpdatedAt string   `json:"updated_at"`
+	ID          string   `json:"id"`
+	Date        string   `json:"date"`
+	Title       string   `json:"title"`
+	Mood        string   `json:"mood"`
+	Emoji       string   `json:"emoji"`
+	FilePath    string   `json:"file_path"`
+	WordCount   int      `json:"word_count"`
+	Tags        []string `json:"tags"`
+	ContentHash string   `json:"content_hash"`
+	CreatedAt   string   `json:"created_at"`
+	UpdatedAt   string   `json:"updated_at"`
 }
 
 type EntryStore struct {
@@ -33,14 +33,14 @@ func NewEntryStore(db *sql.DB) *EntryStore {
 }
 
 type CreateEntryParams struct {
-	UserID    string
-	Date      string
-	Title     string
-	Mood      string
-	Emoji     string
-	FilePath  string
-	WordCount int
-	Tags      []string
+	Date        string
+	Title       string
+	Mood        string
+	Emoji       string
+	FilePath    string
+	WordCount   int
+	Tags        []string
+	ContentHash string
 }
 
 func (s *EntryStore) Create(p CreateEntryParams) (*Entry, error) {
@@ -57,31 +57,30 @@ func (s *EntryStore) Create(p CreateEntryParams) (*Entry, error) {
 	}
 
 	_, err = s.db.Exec(`
-		INSERT INTO entries (id, user_id, date, title, mood, emoji, file_path, word_count, tags, created_at, updated_at)
+		INSERT INTO entries (id, date, title, mood, emoji, file_path, word_count, tags, content_hash, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		id, p.UserID, p.Date, p.Title, p.Mood, p.Emoji, p.FilePath, p.WordCount, string(tagsJSON), now, now,
+		id, p.Date, p.Title, p.Mood, p.Emoji, p.FilePath, p.WordCount, string(tagsJSON), p.ContentHash, now, now,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert entry: %w", err)
 	}
 
 	return &Entry{
-		ID:        id,
-		UserID:    p.UserID,
-		Date:      p.Date,
-		Title:     p.Title,
-		Mood:      p.Mood,
-		Emoji:     p.Emoji,
-		FilePath:  p.FilePath,
-		WordCount: p.WordCount,
-		Tags:      tags,
-		CreatedAt: now,
-		UpdatedAt: now,
+		ID:          id,
+		Date:        p.Date,
+		Title:       p.Title,
+		Mood:        p.Mood,
+		Emoji:       p.Emoji,
+		FilePath:    p.FilePath,
+		WordCount:   p.WordCount,
+		Tags:        tags,
+		ContentHash: p.ContentHash,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}, nil
 }
 
 type ListEntriesParams struct {
-	UserID string
 	Limit  int
 	Offset int
 	Month  int
@@ -97,8 +96,8 @@ type ListEntriesResult struct {
 
 func (s *EntryStore) List(p ListEntriesParams) (*ListEntriesResult, error) {
 	var total int
-	query := `SELECT COUNT(*) FROM entries WHERE user_id = ?`
-	args := []any{p.UserID}
+	query := `SELECT COUNT(*) FROM entries WHERE 1=1`
+	args := []any{}
 	if p.Month != 0 {
 		query += " AND strftime('%m', date) = ?"
 		args = append(args, fmt.Sprintf("%02d", p.Month))
@@ -115,12 +114,12 @@ func (s *EntryStore) List(p ListEntriesParams) (*ListEntriesResult, error) {
 	}
 
 	rows, err := s.db.Query(`
-		SELECT id, user_id, date, title, mood, emoji, file_path, word_count, tags, created_at, updated_at
+		SELECT id, date, title, mood, emoji, file_path, word_count, tags, content_hash, created_at, updated_at
 		FROM entries
-		WHERE user_id = ? AND strftime('%m', date) = ? AND strftime('%Y', date) = ?
+		WHERE strftime('%m', date) = ? AND strftime('%Y', date) = ?
 		ORDER BY date DESC
 		LIMIT ? OFFSET ?`,
-		p.UserID, fmt.Sprintf("%02d", p.Month), fmt.Sprintf("%04d", p.Year), p.Limit, p.Offset,
+		fmt.Sprintf("%02d", p.Month), fmt.Sprintf("%04d", p.Year), p.Limit, p.Offset,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list entries: %w", err)
@@ -131,7 +130,7 @@ func (s *EntryStore) List(p ListEntriesParams) (*ListEntriesResult, error) {
 	for rows.Next() {
 		var e Entry
 		var tagsJSON string
-		if err := rows.Scan(&e.ID, &e.UserID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.FilePath, &e.WordCount, &tagsJSON, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.FilePath, &e.WordCount, &tagsJSON, &e.ContentHash, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan entry: %w", err)
 		}
 		if err := json.Unmarshal([]byte(tagsJSON), &e.Tags); err != nil {
@@ -152,13 +151,13 @@ func (s *EntryStore) List(p ListEntriesParams) (*ListEntriesResult, error) {
 	}, nil
 }
 
-func (s *EntryStore) GetByID(userID, id string) (*Entry, error) {
+func (s *EntryStore) GetByID(id string) (*Entry, error) {
 	var e Entry
 	var tagsJSON string
 	err := s.db.QueryRow(`
-		SELECT id, user_id, date, title, mood, emoji, file_path, word_count, tags, created_at, updated_at
-		FROM entries WHERE user_id = ? AND id = ?`, userID, id).
-		Scan(&e.ID, &e.UserID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.FilePath, &e.WordCount, &tagsJSON, &e.CreatedAt, &e.UpdatedAt)
+		SELECT id, date, title, mood, emoji, file_path, word_count, tags, content_hash, created_at, updated_at
+		FROM entries WHERE id = ?`, id).
+		Scan(&e.ID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.FilePath, &e.WordCount, &tagsJSON, &e.ContentHash, &e.CreatedAt, &e.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -172,14 +171,14 @@ func (s *EntryStore) GetByID(userID, id string) (*Entry, error) {
 }
 
 type UpdateEntryParams struct {
-	UserID    string
-	ID        string
-	Title     string
-	Mood      string
-	Emoji     string
-	WordCount int
-	Tags      []string
-	FilePath  string
+	ID          string
+	Title       string
+	Mood        string
+	Emoji       string
+	WordCount   int
+	Tags        []string
+	FilePath    string
+	ContentHash string
 }
 
 func (s *EntryStore) Update(p UpdateEntryParams) (*Entry, error) {
@@ -196,9 +195,9 @@ func (s *EntryStore) Update(p UpdateEntryParams) (*Entry, error) {
 
 	result, err := s.db.Exec(`
 		UPDATE entries
-		SET title = ?, mood = ?, emoji = ?, word_count = ?, tags = ?, file_path = ?, updated_at = ?
-		WHERE user_id = ? AND id = ?`,
-		p.Title, p.Mood, p.Emoji, p.WordCount, string(tagsJSON), p.FilePath, now, p.UserID, p.ID,
+		SET title = ?, mood = ?, emoji = ?, word_count = ?, tags = ?, file_path = ?, content_hash = ?, updated_at = ?
+		WHERE id = ?`,
+		p.Title, p.Mood, p.Emoji, p.WordCount, string(tagsJSON), p.FilePath, p.ContentHash, now, p.ID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update entry: %w", err)
@@ -212,11 +211,10 @@ func (s *EntryStore) Update(p UpdateEntryParams) (*Entry, error) {
 		return nil, nil
 	}
 
-	return s.GetByID(p.UserID, p.ID)
+	return s.GetByID(p.ID)
 }
 
 type SearchEntriesParams struct {
-	UserID string
 	Query  string
 	Tags   []string
 	Limit  int
@@ -240,20 +238,20 @@ func (s *EntryStore) Search(p SearchEntriesParams) (*SearchEntriesResult, error)
 	}
 	matchExpr := strings.Join(matchParts, " OR ")
 
-	const selectCols = `e.id, e.user_id, e.date, e.title, e.mood, e.emoji, e.file_path, e.word_count, e.tags, e.created_at, e.updated_at`
+	const selectCols = `e.id, e.date, e.title, e.mood, e.emoji, e.file_path, e.word_count, e.tags, e.content_hash, e.created_at, e.updated_at`
 	const baseQuery = `
 		FROM entries e
 		JOIN entries_fts fts ON fts.rowid = e.rowid
-		WHERE e.user_id = ? AND entries_fts MATCH ?`
+		WHERE entries_fts MATCH ?`
 
 	var total int
-	if err := s.db.QueryRow(`SELECT COUNT(*) `+baseQuery, p.UserID, matchExpr).Scan(&total); err != nil {
+	if err := s.db.QueryRow(`SELECT COUNT(*) `+baseQuery, matchExpr).Scan(&total); err != nil {
 		return nil, fmt.Errorf("failed to count fts search results: %w", err)
 	}
 
 	rows, err := s.db.Query(
 		`SELECT `+selectCols+baseQuery+` ORDER BY e.date DESC LIMIT ? OFFSET ?`,
-		p.UserID, matchExpr, p.Limit, p.Offset,
+		matchExpr, p.Limit, p.Offset,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fts search entries: %w", err)
@@ -264,7 +262,7 @@ func (s *EntryStore) Search(p SearchEntriesParams) (*SearchEntriesResult, error)
 	for rows.Next() {
 		var e Entry
 		var tagsJSON string
-		if err := rows.Scan(&e.ID, &e.UserID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.FilePath, &e.WordCount, &tagsJSON, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.FilePath, &e.WordCount, &tagsJSON, &e.ContentHash, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan entry: %w", err)
 		}
 		if err := json.Unmarshal([]byte(tagsJSON), &e.Tags); err != nil {
@@ -288,9 +286,9 @@ func ftsQuote(s string) string {
 	return `"` + strings.ReplaceAll(s, `"`, `""`) + `"`
 }
 
-func (s *EntryStore) ExistsByDate(userID, date string) (bool, error) {
+func (s *EntryStore) ExistsByDate(date string) (bool, error) {
 	var count int
-	err := s.db.QueryRow(`SELECT COUNT(*) FROM entries WHERE user_id = ? AND date = ?`, userID, date).Scan(&count)
+	err := s.db.QueryRow(`SELECT COUNT(*) FROM entries WHERE date = ?`, date).Scan(&count)
 	if err != nil {
 		return false, fmt.Errorf("failed to check entry existence: %w", err)
 	}
@@ -298,8 +296,7 @@ func (s *EntryStore) ExistsByDate(userID, date string) (bool, error) {
 }
 
 type YearAtGlanceParams struct {
-	UserID string
-	Year   int
+	Year int
 }
 
 type YearAtGlanceEntry struct {
@@ -317,8 +314,8 @@ func (s *EntryStore) YearAtGlance(p YearAtGlanceParams) (*YearAtGlanceResult, er
 	var total int
 	err := s.db.QueryRow(`
 		SELECT COUNT(*) FROM entries
-		WHERE user_id = ? AND strftime('%Y', date) = ?`,
-		p.UserID, fmt.Sprintf("%04d", p.Year),
+		WHERE strftime('%Y', date) = ?`,
+		fmt.Sprintf("%04d", p.Year),
 	).Scan(&total)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count entries for year: %w", err)
@@ -326,9 +323,9 @@ func (s *EntryStore) YearAtGlance(p YearAtGlanceParams) (*YearAtGlanceResult, er
 
 	rows, err := s.db.Query(`
 		SELECT id, date, emoji FROM entries
-		WHERE user_id = ? AND strftime('%Y', date) = ?
+		WHERE strftime('%Y', date) = ?
 		ORDER BY date DESC`,
-		p.UserID, fmt.Sprintf("%04d", p.Year),
+		fmt.Sprintf("%04d", p.Year),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query entries for year: %w", err)

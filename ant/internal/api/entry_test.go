@@ -19,6 +19,8 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+const testAuthSecret = "test-secret-passphrase"
+
 func newTestServer(t *testing.T) http.Handler {
 	t.Helper()
 
@@ -37,12 +39,36 @@ func newTestServer(t *testing.T) http.Handler {
 			DefaultLimit: 30,
 			MaxLimit:     100,
 		},
+		AuthConfig: config.AuthConfig{
+			AuthSecret:      testAuthSecret,
+			SessionDuration: 7 * 24 * time.Hour,
+		},
 	}
 
 	return api.NewAPI(cfg, db)
 }
 
-func postEntry(t *testing.T, srv http.Handler, body any) *httptest.ResponseRecorder {
+func login(t *testing.T, srv http.Handler) string {
+	t.Helper()
+
+	body, err := json.Marshal(map[string]string{"passphrase": testAuthSecret})
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code, "login should succeed")
+
+	var resp map[string]any
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	token, ok := resp["token"].(string)
+	require.True(t, ok, "login response should contain token")
+	return token
+}
+
+func postEntry(t *testing.T, srv http.Handler, token string, body any) *httptest.ResponseRecorder {
 	t.Helper()
 
 	raw, err := json.Marshal(body)
@@ -50,6 +76,7 @@ func postEntry(t *testing.T, srv http.Handler, body any) *httptest.ResponseRecor
 
 	req := httptest.NewRequest(http.MethodPost, "/api/entries", bytes.NewReader(raw))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	rec := httptest.NewRecorder()
 	srv.ServeHTTP(rec, req)
@@ -68,10 +95,177 @@ type errorBody struct {
 	} `json:"error"`
 }
 
+func Test_Login_Success(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+
+	body, _ := json.Marshal(map[string]string{"passphrase": testAuthSecret})
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var resp map[string]any
+	decodeBody(t, rec, &resp)
+	assert.NotEmpty(t, resp["token"])
+	assert.NotEmpty(t, resp["expires_at"])
+
+	// Should set a session cookie.
+	cookies := rec.Result().Cookies()
+	found := false
+	for _, c := range cookies {
+		if c.Name == "entry_session" {
+			found = true
+			assert.True(t, c.HttpOnly)
+		}
+	}
+	assert.True(t, found, "should set entry_session cookie")
+}
+
+func Test_Login_InvalidPassphrase(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+
+	body, _ := json.Marshal(map[string]string{"passphrase": "wrong-passphrase"})
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+
+	var errResp errorBody
+	decodeBody(t, rec, &errResp)
+	assert.Equal(t, "invalid_passphrase", errResp.Error.Code)
+}
+
+func Test_Login_EmptyPassphrase(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+
+	body, _ := json.Marshal(map[string]string{"passphrase": ""})
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func Test_ProtectedRoute_WithoutAuth_Returns401(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/entries?month=1&year=2026", nil)
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+
+	var errResp errorBody
+	decodeBody(t, rec, &errResp)
+	assert.Equal(t, "unauthorized", errResp.Error.Code)
+}
+
+func Test_ProtectedRoute_WithBearerToken_Succeeds(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+	token := login(t, srv)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/entries?month=1&year=2026", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+func Test_ProtectedRoute_WithSessionCookie_Succeeds(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+	token := login(t, srv)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/entries?month=1&year=2026", nil)
+	req.AddCookie(&http.Cookie{Name: "entry_session", Value: token})
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+func Test_Verify_Authenticated(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+	token := login(t, srv)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/auth/verify", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var resp map[string]any
+	decodeBody(t, rec, &resp)
+	assert.Equal(t, true, resp["authenticated"])
+}
+
+func Test_Verify_NotAuthenticated(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/auth/verify", nil)
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var resp map[string]any
+	decodeBody(t, rec, &resp)
+	assert.Equal(t, false, resp["authenticated"])
+}
+
+func Test_Logout(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+	token := login(t, srv)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/logout", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	// Verify session is gone.
+	req2 := httptest.NewRequest(http.MethodGet, "/api/auth/verify", nil)
+	req2.Header.Set("Authorization", "Bearer "+token)
+	rec2 := httptest.NewRecorder()
+	srv.ServeHTTP(rec2, req2)
+
+	var resp map[string]any
+	decodeBody(t, rec2, &resp)
+	assert.Equal(t, false, resp["authenticated"])
+}
+
 func Test_CreateEntry_Success(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
+	token := login(t, srv)
 
 	reqBody := map[string]any{
 		"title":   "My First Entry",
@@ -82,7 +276,7 @@ func Test_CreateEntry_Success(t *testing.T) {
 		"content": "Had a productive day writing Go code.",
 	}
 
-	rec := postEntry(t, srv, reqBody)
+	rec := postEntry(t, srv, token, reqBody)
 
 	assert.Equal(t, http.StatusCreated, rec.Code)
 	assert.Equal(t, "application/json; charset=utf-8", rec.Header().Get("Content-Type"))
@@ -97,8 +291,9 @@ func Test_CreateEntry_Success_WordCountCalculation(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
+	token := login(t, srv)
 
-	rec := postEntry(t, srv, map[string]any{
+	rec := postEntry(t, srv, token, map[string]any{
 		"title":   "My First Entry",
 		"date":    "2026-04-20",
 		"content": "one two three four five",
@@ -115,8 +310,9 @@ func Test_CreateEntry_Success_ContentWithOnlyWhitespaceWords(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
+	token := login(t, srv)
 
-	rec := postEntry(t, srv, map[string]any{
+	rec := postEntry(t, srv, token, map[string]any{
 		"title":   "My First Entry",
 		"date":    "2026-04-21",
 		"content": "  hello world  ",
@@ -149,8 +345,9 @@ func Test_CreateEntry_InvalidDateFormat(t *testing.T) {
 			t.Parallel()
 
 			srv := newTestServer(t)
+			token := login(t, srv)
 
-			rec := postEntry(t, srv, map[string]any{
+			rec := postEntry(t, srv, token, map[string]any{
 				"title":   "My First Entry",
 				"date":    date,
 				"content": "Testing invalid date format.",
@@ -185,8 +382,9 @@ func Test_CreateEntry_AnyMoodIsAccepted(t *testing.T) {
 		t.Run("mood:"+mood, func(t *testing.T) {
 			t.Parallel()
 			srv := newTestServer(t)
+			token := login(t, srv)
 			date := fmt.Sprintf("2026-06-%02d", i+1)
-			rec := postEntry(t, srv, map[string]any{
+			rec := postEntry(t, srv, token, map[string]any{
 				"title":   "Mood test entry",
 				"date":    date,
 				"mood":    mood,
@@ -202,8 +400,9 @@ func Test_CreateEntry_MissingContent(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
+	token := login(t, srv)
 
-	rec := postEntry(t, srv, map[string]any{
+	rec := postEntry(t, srv, token, map[string]any{
 		"title": "My First Entry",
 		"date":  "2026-07-04",
 	})
@@ -232,8 +431,9 @@ func Test_CreateEntry_BlankContent(t *testing.T) {
 			t.Parallel()
 
 			srv := newTestServer(t)
+			token := login(t, srv)
 
-			rec := postEntry(t, srv, map[string]any{
+			rec := postEntry(t, srv, token, map[string]any{
 				"title":   "My First Entry",
 				"date":    "2026-07-05",
 				"content": content,
@@ -252,6 +452,7 @@ func Test_CreateEntry_DuplicateDate_ReturnsConflict(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
+	token := login(t, srv)
 
 	body := map[string]any{
 		"title":   "My First Entry",
@@ -259,10 +460,10 @@ func Test_CreateEntry_DuplicateDate_ReturnsConflict(t *testing.T) {
 		"content": "First entry for this date.",
 	}
 
-	rec := postEntry(t, srv, body)
+	rec := postEntry(t, srv, token, body)
 	require.Equal(t, http.StatusCreated, rec.Code, "first entry should be created successfully")
 
-	rec2 := postEntry(t, srv, map[string]any{
+	rec2 := postEntry(t, srv, token, map[string]any{
 		"title":   "My Second Entry",
 		"date":    "2026-09-01",
 		"content": "Duplicate entry for the same date.",
@@ -279,15 +480,16 @@ func Test_CreateEntry_DifferentDates_BothSucceed(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
+	token := login(t, srv)
 
-	rec1 := postEntry(t, srv, map[string]any{
+	rec1 := postEntry(t, srv, token, map[string]any{
 		"title":   "My First Entry",
 		"date":    "2026-10-01",
 		"content": "Entry for October 1st.",
 	})
 	assert.Equal(t, http.StatusCreated, rec1.Code)
 
-	rec2 := postEntry(t, srv, map[string]any{
+	rec2 := postEntry(t, srv, token, map[string]any{
 		"title":   "My Second Entry",
 		"date":    "2026-10-02",
 		"content": "Entry for October 2nd.",
@@ -299,9 +501,11 @@ func Test_CreateEntry_InvalidJSON(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
+	token := login(t, srv)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/entries", bytes.NewBufferString(`{not valid json`))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	rec := httptest.NewRecorder()
 	srv.ServeHTTP(rec, req)
@@ -317,9 +521,11 @@ func Test_CreateEntry_EmptyBody(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
+	token := login(t, srv)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/entries", bytes.NewBufferString(`{}`))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	rec := httptest.NewRecorder()
 	srv.ServeHTTP(rec, req)
@@ -331,7 +537,7 @@ func Test_CreateEntry_EmptyBody(t *testing.T) {
 	assert.Equal(t, "missing_title", body.Error.Code)
 }
 
-func putEntry(t *testing.T, srv http.Handler, id string, body any) *httptest.ResponseRecorder {
+func putEntry(t *testing.T, srv http.Handler, token, id string, body any) *httptest.ResponseRecorder {
 	t.Helper()
 
 	raw, err := json.Marshal(body)
@@ -339,6 +545,7 @@ func putEntry(t *testing.T, srv http.Handler, id string, body any) *httptest.Res
 
 	req := httptest.NewRequest(http.MethodPut, "/api/entries/"+id, bytes.NewReader(raw))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	rec := httptest.NewRecorder()
 	srv.ServeHTTP(rec, req)
@@ -349,8 +556,9 @@ func Test_UpdateEntry_Success(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
+	token := login(t, srv)
 
-	createRec := postEntry(t, srv, map[string]any{
+	createRec := postEntry(t, srv, token, map[string]any{
 		"title":   "My First Entry",
 		"date":    "2026-02-10",
 		"mood":    "Calm and focused",
@@ -364,7 +572,7 @@ func Test_UpdateEntry_Success(t *testing.T) {
 	decodeBody(t, createRec, &created)
 	id := created["id"].(string)
 
-	rec := putEntry(t, srv, id, map[string]any{
+	rec := putEntry(t, srv, token, id, map[string]any{
 		"mood":    "Excited and happy",
 		"emoji":   "🎉",
 		"tags":    []string{"updated", "go"},
@@ -389,8 +597,9 @@ func Test_UpdateEntry_UpdatesWordCount(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
+	token := login(t, srv)
 
-	createRec := postEntry(t, srv, map[string]any{
+	createRec := postEntry(t, srv, token, map[string]any{
 		"title":   "My First Entry",
 		"date":    "2026-02-11",
 		"content": "one two three",
@@ -401,7 +610,7 @@ func Test_UpdateEntry_UpdatesWordCount(t *testing.T) {
 	decodeBody(t, createRec, &created)
 	id := created["id"].(string)
 
-	rec := putEntry(t, srv, id, map[string]any{
+	rec := putEntry(t, srv, token, id, map[string]any{
 		"content": "one two three four five six seven",
 	})
 
@@ -416,8 +625,9 @@ func Test_UpdateEntry_NotFound(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
+	token := login(t, srv)
 
-	rec := putEntry(t, srv, "01NONEXISTENTID000000000000", map[string]any{
+	rec := putEntry(t, srv, token, "01NONEXISTENTID000000000000", map[string]any{
 		"content": "Some content.",
 	})
 
@@ -432,8 +642,9 @@ func Test_UpdateEntry_InvalidJSON(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
+	token := login(t, srv)
 
-	createRec := postEntry(t, srv, map[string]any{
+	createRec := postEntry(t, srv, token, map[string]any{
 		"title":   "My First Entry",
 		"date":    "2026-02-12",
 		"content": "Hello world.",
@@ -446,6 +657,7 @@ func Test_UpdateEntry_InvalidJSON(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPut, "/api/entries/"+id, bytes.NewBufferString(`{not valid json`))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	rec := httptest.NewRecorder()
 	srv.ServeHTTP(rec, req)
@@ -461,8 +673,9 @@ func Test_UpdateEntry_BlankContent(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
+	token := login(t, srv)
 
-	createRec := postEntry(t, srv, map[string]any{
+	createRec := postEntry(t, srv, token, map[string]any{
 		"title":   "My First Entry",
 		"date":    "2026-02-14",
 		"content": "Hello world.",
@@ -473,7 +686,7 @@ func Test_UpdateEntry_BlankContent(t *testing.T) {
 	decodeBody(t, createRec, &created)
 	id := created["id"].(string)
 
-	rec := putEntry(t, srv, id, map[string]any{
+	rec := putEntry(t, srv, token, id, map[string]any{
 		"content": "   ",
 	})
 
@@ -482,4 +695,34 @@ func Test_UpdateEntry_BlankContent(t *testing.T) {
 	var body errorBody
 	decodeBody(t, rec, &body)
 	assert.Equal(t, "missing_content", body.Error.Code)
+}
+
+func Test_GetEntry_ReturnsVerifiedFlag(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t)
+	token := login(t, srv)
+
+	createRec := postEntry(t, srv, token, map[string]any{
+		"title":   "Integrity Test",
+		"date":    "2026-03-15",
+		"content": "This entry should be verified.",
+	})
+	require.Equal(t, http.StatusCreated, createRec.Code)
+
+	var created map[string]any
+	decodeBody(t, createRec, &created)
+	id := created["id"].(string)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/entries/"+id, nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var resp map[string]any
+	decodeBody(t, rec, &resp)
+	assert.Equal(t, true, resp["verified"])
+	assert.NotEmpty(t, resp["content_hash"])
 }

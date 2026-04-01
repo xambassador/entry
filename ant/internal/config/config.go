@@ -21,6 +21,8 @@ const (
 	requestTimeoutEnv    = "ENTRY_REQUEST_TIMEOUT"
 	listDefaultLimitEnv  = "ENTRY_LIST_DEFAULT_LIMIT"
 	listMaxLimitEnv      = "ENTRY_LIST_MAX_LIMIT"
+	authSecretEnv        = "ENTRY_AUTH_SECRET"
+	sessionDurationEnv   = "ENTRY_SESSION_DURATION"
 )
 
 type Config struct {
@@ -29,6 +31,12 @@ type Config struct {
 	DBPath  string
 	RequestConfig
 	PaginationConfig
+	AuthConfig
+}
+
+type AuthConfig struct {
+	AuthSecret      string
+	SessionDuration time.Duration
 }
 
 type RequestConfig struct {
@@ -104,6 +112,16 @@ func Load() (Config, error) {
 		listDefaultLimit = listMaxLimit
 	}
 
+	authSecret := os.Getenv(authSecretEnv)
+	if authSecret == "" {
+		return Config{}, fmt.Errorf("%s is required", authSecretEnv)
+	}
+
+	sessionDuration, err := readDurationEnv(sessionDurationEnv, 7*24*time.Hour)
+	if err != nil {
+		return Config{}, err
+	}
+
 	requestConfig := RequestConfig{
 		ReadTimeout:       readTimeout,
 		ReadHeaderTimeout: readHeaderTimeout,
@@ -123,6 +141,10 @@ func Load() (Config, error) {
 		DBPath:           dbPath,
 		RequestConfig:    requestConfig,
 		PaginationConfig: paginationConfig,
+		AuthConfig: AuthConfig{
+			AuthSecret:      authSecret,
+			SessionDuration: sessionDuration,
+		},
 	}
 
 	return cfg, nil

@@ -13,8 +13,6 @@ import (
 	"github.com/xambassador/entry/internal/utils"
 )
 
-const defaultUserID = "default"
-
 func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	body := &createEntryRequest{}
 	if err := json.NewDecoder(r.Body).Decode(body); err != nil {
@@ -27,9 +25,7 @@ func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := defaultUserID
-
-	exists, err := a.entryStore.ExistsByDate(userID, body.Date)
+	exists, err := a.entryStore.ExistsByDate(body.Date)
 	if err != nil {
 		log.Printf("error checking entry existence: %v", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to check existing entry"))
@@ -58,7 +54,9 @@ func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 		Tags:      tags,
 	}
 
-	relPath, err := markdown.WriteEntry(a.config.DataDir, userID, fm, body.Content)
+	hmacKey := []byte(a.config.AuthSecret)
+
+	relPath, contentHash, err := markdown.WriteEntry(a.config.DataDir, fm, body.Content, hmacKey)
 	if err != nil {
 		log.Printf("error writing markdown file: %v", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to write entry file"))
@@ -66,14 +64,14 @@ func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	entry, err := a.entryStore.Create(store.CreateEntryParams{
-		UserID:    userID,
-		Date:      body.Date,
-		Title:     body.Title,
-		Mood:      body.Mood,
-		Emoji:     body.Emoji,
-		FilePath:  relPath,
-		WordCount: wordCount,
-		Tags:      tags,
+		Date:        body.Date,
+		Title:       body.Title,
+		Mood:        body.Mood,
+		Emoji:       body.Emoji,
+		FilePath:    relPath,
+		WordCount:   wordCount,
+		Tags:        tags,
+		ContentHash: contentHash,
 	})
 	if err != nil {
 		log.Printf("error creating entry in db: %v", err)
@@ -81,24 +79,38 @@ func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Rewrite the file with the generated ID embedded in frontmatter.
 	fm.ID = entry.ID
-	if _, err := markdown.WriteEntry(a.config.DataDir, userID, fm, body.Content); err != nil {
+	_, contentHash, err = markdown.WriteEntry(a.config.DataDir, fm, body.Content, hmacKey)
+	if err != nil {
 		log.Printf("error updating markdown file with ID: %v", err)
+	} else {
+		// Update the content hash in DB to match the final file.
+		_, _ = a.entryStore.Update(store.UpdateEntryParams{
+			ID:          entry.ID,
+			Title:       entry.Title,
+			Mood:        entry.Mood,
+			Emoji:       entry.Emoji,
+			WordCount:   entry.WordCount,
+			Tags:        entry.Tags,
+			FilePath:    entry.FilePath,
+			ContentHash: contentHash,
+		})
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, entry)
 }
 
 type getEntryResponse struct {
-	Content string `json:"content"`
+	Content  string `json:"content"`
+	Verified bool   `json:"verified"`
 	store.Entry
 }
 
 func (a *API) GetEntry(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	entry, err := a.entryStore.GetByID(defaultUserID, id)
-
+	entry, err := a.entryStore.GetByID(id)
 	if err != nil {
 		log.Printf("error getting entry: %v", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to get entry"))
@@ -109,16 +121,25 @@ func (a *API) GetEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	content, err := markdown.GetEntryContent(a.config.DataDir, defaultUserID, entry.FilePath)
+	content, err := markdown.GetEntryContent(a.config.DataDir, entry.FilePath)
 	if err != nil {
 		log.Printf("error getting entry content: %v", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to get entry content"))
 		return
 	}
 
+	verified := false
+	if entry.ContentHash != "" {
+		currentHash, err := markdown.ContentHash(a.config.DataDir, entry.FilePath)
+		if err == nil {
+			verified = currentHash == entry.ContentHash
+		}
+	}
+
 	response := getEntryResponse{
-		Content: markdown.RemoveFrontmatter(content),
-		Entry:   *entry,
+		Content:  markdown.RemoveFrontmatter(content),
+		Verified: verified,
+		Entry:    *entry,
 	}
 
 	utils.WriteJSON(w, http.StatusOK, response)
@@ -138,7 +159,7 @@ func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entry, err := a.entryStore.GetByID(defaultUserID, id)
+	entry, err := a.entryStore.GetByID(id)
 	if err != nil {
 		log.Printf("error getting entry: %v", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to get entry"))
@@ -169,7 +190,9 @@ func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 		Tags:      tags,
 	}
 
-	relPath, err := markdown.WriteEntry(a.config.DataDir, defaultUserID, fm, body.Content)
+	hmacKey := []byte(a.config.AuthSecret)
+
+	relPath, contentHash, err := markdown.WriteEntry(a.config.DataDir, fm, body.Content, hmacKey)
 	if err != nil {
 		log.Printf("error writing markdown file: %v", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to write entry file"))
@@ -177,14 +200,14 @@ func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updated, err := a.entryStore.Update(store.UpdateEntryParams{
-		UserID:    defaultUserID,
-		ID:        entry.ID,
-		Title:     body.Title,
-		Mood:      body.Mood,
-		Emoji:     body.Emoji,
-		WordCount: wordCount,
-		Tags:      tags,
-		FilePath:  relPath,
+		ID:          entry.ID,
+		Title:       body.Title,
+		Mood:        body.Mood,
+		Emoji:       body.Emoji,
+		WordCount:   wordCount,
+		Tags:        tags,
+		FilePath:    relPath,
+		ContentHash: contentHash,
 	})
 	if err != nil {
 		log.Printf("error updating entry in db: %v", err)
@@ -193,8 +216,9 @@ func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := getEntryResponse{
-		Content: body.Content,
-		Entry:   *updated,
+		Content:  body.Content,
+		Verified: true,
+		Entry:    *updated,
 	}
 
 	utils.WriteJSON(w, http.StatusOK, response)
@@ -216,8 +240,6 @@ func (a *API) ListEntries(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := defaultUserID
-
 	limit, offset, err := getLimitAndOffsetFromQuery(r, a.config.DefaultLimit, a.config.MaxLimit)
 	if err != nil {
 		utils.WriteJSON(w, http.StatusBadRequest, utils.NewErrorResponse(ErrInvalidLimitOrOffset, err.Error()))
@@ -225,7 +247,6 @@ func (a *API) ListEntries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := a.entryStore.List(store.ListEntriesParams{
-		UserID: userID,
 		Limit:  limit,
 		Offset: offset,
 		Month:  month,
@@ -241,8 +262,6 @@ func (a *API) ListEntries(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) SearchEntries(w http.ResponseWriter, r *http.Request) {
-	userID := defaultUserID
-
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	rawTags := r.URL.Query().Get("tags")
 
@@ -267,7 +286,6 @@ func (a *API) SearchEntries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := a.entryStore.Search(store.SearchEntriesParams{
-		UserID: userID,
 		Query:  q,
 		Tags:   tags,
 		Limit:  limit,
@@ -283,7 +301,6 @@ func (a *API) SearchEntries(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) YearAtGlance(w http.ResponseWriter, r *http.Request) {
-	userID := defaultUserID
 	y := r.URL.Query().Get("year")
 
 	year, err := getYearFromQuery(y)
@@ -293,8 +310,7 @@ func (a *API) YearAtGlance(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := a.entryStore.YearAtGlance(store.YearAtGlanceParams{
-		UserID: userID,
-		Year:   year,
+		Year: year,
 	})
 	if err != nil {
 		log.Printf("error getting year at glance: %v", err)

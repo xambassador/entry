@@ -11,4 +11,6 @@ const (
 	ErrInvalidYear          ErrorCode = "invalid_year"
 	ErrInvalidLimitOrOffset ErrorCode = "invalid_limit_or_offset"
 	ErrMissingQuery         ErrorCode = "missing_query"
+	ErrUnauthorized         ErrorCode = "unauthorized"
+	ErrInvalidPassphrase    ErrorCode = "invalid_passphrase"
 )
