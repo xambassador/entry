@@ -1,6 +1,8 @@
 import type { GetEntryResponse } from "@/types";
 
-import { MoodPicker } from "@/components/views/editor/mood-picker";
+import { lazy, Suspense } from "react";
+import { Loader2 } from "lucide-react";
+
 import { Tags } from "@/components/views/editor/tags";
 
 import { EntryDate } from "./date-header";
@@ -10,6 +12,8 @@ import { ContentInput, TitleInput } from "./form-elements";
 import { SaveButton } from "./save-button";
 
 import "./editor.css";
+
+const MoodPicker = lazy(() => import("@/components/views/editor/mood-picker").then((m) => ({ default: m.MoodPicker })));
 
 type Props = { entry?: GetEntryResponse };
 
@@ -31,7 +35,12 @@ export function Editor(props: Props) {
               <EntryDate date={entry?.date} />
               {elements.ornament}
               {elements.quote}
-              <MoodPicker mood={entry?.mood} emoji={entry?.emoji} />
+              <div>
+                {moodLabel}
+                <Suspense fallback={spinner}>
+                  <MoodPicker mood={entry?.mood} emoji={entry?.emoji} />
+                </Suspense>
+              </div>
               <Tags tags={entry?.tags} />
             </div>
             <div className="relative z-3 flex items-end justify-between mt-6">
@@ -57,3 +66,10 @@ export function Editor(props: Props) {
     </div>
   );
 }
+
+const spinner = (
+  <div className="wax-seal cursor-pointer shrink-0 transition-transform duration-150 active:scale-95">
+    <Loader2 className="animate-spin size-4" />
+  </div>
+);
+const moodLabel = <p className="text-[12px] tracking-widest uppercase mb-2 text-ink-faint">Mood</p>;
