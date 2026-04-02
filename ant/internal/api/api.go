@@ -45,18 +45,20 @@ func NewAPI(cfg *config.Config, db *sql.DB) *API {
 
 	router.Post("/api/auth/login", api.Login)
 	router.Get("/api/auth/verify", api.Verify)
-
 	router.Group(func(r chi.Router) {
 		r.Use(api.RequireAuth)
-
 		r.Post("/api/auth/logout", api.Logout)
+	})
 
-		r.Route("/api/entries", func(r chi.Router) {
+	router.Route("/api/entries", func(r chi.Router) {
+		r.Get("/", api.ListEntries)
+		r.Get("/search", api.SearchEntries)
+		r.Get("/year-at-glance", api.YearAtGlance)
+		r.Get("/{id}", api.GetEntry)
+
+		r.Group(func(r chi.Router) {
+			r.Use(api.RequireAuth)
 			r.Post("/", api.CreateEntry)
-			r.Get("/", api.ListEntries)
-			r.Get("/search", api.SearchEntries)
-			r.Get("/year-at-glance", api.YearAtGlance)
-			r.Get("/{id}", api.GetEntry)
 			r.Put("/{id}", api.UpdateEntry)
 		})
 	})

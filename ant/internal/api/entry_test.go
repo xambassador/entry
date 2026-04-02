@@ -160,22 +160,6 @@ func Test_Login_EmptyPassphrase(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
-func Test_ProtectedRoute_WithoutAuth_Returns401(t *testing.T) {
-	t.Parallel()
-
-	srv := newTestServer(t)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/entries?month=1&year=2026", nil)
-	rec := httptest.NewRecorder()
-	srv.ServeHTTP(rec, req)
-
-	assert.Equal(t, http.StatusUnauthorized, rec.Code)
-
-	var errResp errorBody
-	decodeBody(t, rec, &errResp)
-	assert.Equal(t, "unauthorized", errResp.Error.Code)
-}
-
 func Test_ProtectedRoute_WithBearerToken_Succeeds(t *testing.T) {
 	t.Parallel()
 
