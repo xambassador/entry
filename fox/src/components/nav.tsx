@@ -16,14 +16,6 @@ export function Nav() {
               Entries
             </Link>
           </li>
-          <li>
-            <Link
-              to="/write"
-              className="relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-(family-name:--font-body) tracking-wide transition-colors duration-300 cursor-pointer data-[status=active]:text-ink text-ink-muted hover:text-ink-secondary"
-            >
-              Write
-            </Link>
-          </li>
         </ul>
       </nav>
     </header>

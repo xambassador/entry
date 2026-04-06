@@ -14,6 +14,7 @@ const (
 	entryPortEnv         = "ENTRY_PORT"
 	entryDataDirEnv      = "ENTRY_DATA_DIR"
 	entryDBPathEnv       = "ENTRY_DB_PATH"
+	entryDevProxyEnv     = "ENTRY_DEV_PROXY"
 	readTimeoutEnv       = "ENTRY_READ_TIMEOUT"
 	readHeaderTimeoutEnv = "ENTRY_READ_HEADER_TIMEOUT"
 	writeTimeoutEnv      = "ENTRY_WRITE_TIMEOUT"
@@ -26,9 +27,10 @@ const (
 )
 
 type Config struct {
-	Port    int
-	DataDir string
-	DBPath  string
+	Port     int
+	DataDir  string
+	DBPath   string
+	DevProxy string // Vite dev server URL, e.g. "http://localhost:5173". Empty in production.
 	RequestConfig
 	PaginationConfig
 	AuthConfig
@@ -71,6 +73,8 @@ func Load() (Config, error) {
 	if dbPath == "" {
 		dbPath = filepath.Join(dataDir, "entry.db")
 	}
+
+	devProxy := os.Getenv(entryDevProxyEnv)
 
 	readTimeout, err := readDurationEnv(readTimeoutEnv, 10*time.Second)
 	if err != nil {
@@ -139,6 +143,7 @@ func Load() (Config, error) {
 		Port:             port,
 		DataDir:          dataDir,
 		DBPath:           dbPath,
+		DevProxy:         devProxy,
 		RequestConfig:    requestConfig,
 		PaginationConfig: paginationConfig,
 		AuthConfig: AuthConfig{

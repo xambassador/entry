@@ -12,8 +12,9 @@ import type {
 import { up } from "up-fetch";
 
 export const api = up(fetch, () => ({
-  baseUrl: "http://localhost:3000/api",
-  timeout: 30000
+  baseUrl: "/api",
+  timeout: 30000,
+  credentials: "include"
 }));
 
 export async function getEntries(query?: { month?: number; year?: number }, signal?: AbortSignal) {
@@ -58,6 +59,14 @@ export async function getYearAtGlance(year?: number, signal?: AbortSignal) {
   const res = await api<GetYearAtGlanceResponse>("/entries/year-at-glance", {
     params: { year },
     signal
+  });
+  return res;
+}
+
+export async function login(passphrase: string) {
+  const res = await api<{ token: string; expires_at: string; write_url: string }>("/auth/login", {
+    method: "POST",
+    body: { passphrase }
   });
   return res;
 }

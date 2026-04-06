@@ -42,10 +42,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	api := api.NewAPI(&cfg, db)
+	handler := api.NewAPI(&cfg, db)
+
+	baseURL := fmt.Sprintf("http://localhost:%d", cfg.Port)
+
+	log.Println("========================================")
+	log.Printf("  Login : %s%s", baseURL, handler.LoginPath())
+	log.Printf("  Write : %s%s", baseURL, handler.WritePath())
+	log.Println("========================================")
+
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           api,
+		Handler:           handler,
 		ReadTimeout:       cfg.ReadTimeout,
 		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
 		WriteTimeout:      cfg.WriteTimeout,

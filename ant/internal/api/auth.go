@@ -19,11 +19,13 @@ type loginRequest struct {
 type loginResponse struct {
 	Token     string `json:"token"`
 	ExpiresAt string `json:"expires_at"`
+	WriteURL  string `json:"write_url"`
 }
 
 type verifyResponse struct {
 	Authenticated bool   `json:"authenticated"`
 	ExpiresAt     string `json:"expires_at,omitempty"`
+	WriteURL      string `json:"write_url,omitempty"`
 }
 
 func (a *API) Login(w http.ResponseWriter, r *http.Request) {
@@ -68,6 +70,7 @@ func (a *API) Login(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusOK, loginResponse{
 		Token:     token,
 		ExpiresAt: session.ExpiresAt,
+		WriteURL:  a.writePath,
 	})
 }
 
@@ -123,5 +126,6 @@ func (a *API) Verify(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusOK, verifyResponse{
 		Authenticated: true,
 		ExpiresAt:     session.ExpiresAt,
+		WriteURL:      a.writePath,
 	})
 }
