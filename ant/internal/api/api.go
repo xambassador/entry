@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -27,7 +28,8 @@ type API struct {
 	sessionStore *store.SessionStore
 	loginPath    string
 	writePath    string
-	// devProxy is for forwarding requests to the Vite dev server during development. It is nil in production.
+	// devProxy is for forwarding requests to the Vite dev server during development.
+	// In production this will stay nil
 	devProxy *httputil.ReverseProxy
 }
 
@@ -102,16 +104,12 @@ func NewAPI(cfg *config.Config, db *sql.DB) *API {
 		router.Handle("/*", api.devProxy)
 		router.NotFound(api.devProxy.ServeHTTP)
 	} else {
-		// Production mode: serve the embedded dist/ tree.
+		// serve the embedded dist files in production.
 		distFS := frontend.FS()
 		fileServer := http.FileServerFS(distFS)
 
-		// /assets/* — hashed filenames, safe to serve directly.
 		router.Handle("/assets/*", fileServer)
-
-		// /vite.svg
 		router.Handle("/vite.svg", fileServer)
-
 		// Anything else falls back to the SPA index.html.
 		router.NotFound(api.serveSPA)
 	}
@@ -150,12 +148,25 @@ func (a *API) serveWritePage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, a.loginPath, http.StatusTemporaryRedirect)
 		return
 	}
+
+	today := time.Now().Format("2006-01-02")
+	var redirectId string
+	if entryID, err := a.entryStore.GetIDByDate(today); err == nil && entryID != "" {
+		redirectId = entryID
+	}
+
+	if redirectId != "" && r.URL.Query().Get("edit") == "" {
+		http.Redirect(w, r, fmt.Sprintf("%s?edit=%s", a.writePath, redirectId), http.StatusTemporaryRedirect)
+		return
+	}
+
 	if a.devProxy != nil {
 		r2 := r.Clone(r.Context())
 		r2.URL.Path = "/write.html"
 		a.devProxy.ServeHTTP(w, r2)
 		return
 	}
+
 	serveEmbeddedFile(w, r, "write.html")
 }
 

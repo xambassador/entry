@@ -170,6 +170,21 @@ func (s *EntryStore) GetByID(id string) (*Entry, error) {
 	return &e, nil
 }
 
+func (s *EntryStore) GetIDByDate(date string) (string, error) {
+	var id string
+	err := s.db.QueryRow(`SELECT id FROM entries WHERE date = ?`, date).Scan(&id)
+
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("failed to get entry by date: %w", err)
+	}
+
+	return id, nil
+}
+
 type UpdateEntryParams struct {
 	ID          string
 	Title       string
