@@ -9,23 +9,19 @@ import { EntryDate } from "./date-header";
 import * as elements from "./elements";
 import { CharCount, WordCount } from "./footer";
 import { ContentInput, TitleInput } from "./form-elements";
-import { SaveButton } from "./save-button";
 
 import "./editor.css";
 
 const MoodPicker = lazy(() => import("@/components/views/editor/mood-picker").then((m) => ({ default: m.MoodPicker })));
 
-type Props = { entry?: GetEntryResponse };
+type Props = { entry?: GetEntryResponse; children?: React.ReactNode };
 
 export function Editor(props: Props) {
-  const { entry } = props;
+  const { entry, children } = props;
 
   return (
     <div className="flex flex-col flex-1 gap-5 h-full">
-      <div className="flex items-center justify-between">
-        {elements.backToEntries}
-        <SaveButton entry={entry} />
-      </div>
+      <div className="flex items-center justify-between">{children}</div>
       <div className="open-diary overflow-hidden w-full flex-1 min-h-0 flex flex-col relative bg-transparent rounded-3xl">
         {elements.diaryEdgeTop}
         {elements.diaryEdgeBottom}

@@ -64,6 +64,10 @@ body {
   @apply min-h-screen;
 }
 
+.back-link {
+  @apply flex items-center gap-2 text-ink-muted hover:text-ink transition-colors duration-200 cursor-pointer;
+}
+
 .dot-leader {
   border-bottom: 1px dotted var(--color-ink-faint);
   opacity: 0.25;

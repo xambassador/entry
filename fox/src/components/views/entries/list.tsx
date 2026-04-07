@@ -26,7 +26,7 @@ export function Entries() {
               >
                 {week.label}
               </h3>
-              <div className="h-px flex-1 bg-linear-to-r from-gilt/10 to-transparent" />
+              {week.entries.length > 0 && <div className="h-px flex-1 bg-linear-to-r from-gilt/10 to-transparent" />}
             </div>
             {week.entries.map((entry) => (
               <EntryRow key={entry.id} entry={entry} />
