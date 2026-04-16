@@ -70,3 +70,12 @@ export async function login(passphrase: string) {
   });
   return res;
 }
+
+export async function getSession(opts?: { signal?: AbortSignal }) {
+  const res = await api<{ status: "authenticated" | "unauthenticated" }>("/auth/session", { signal: opts?.signal });
+  return res;
+}
+
+export async function logout() {
+  await api("/auth/logout", { method: "POST" });
+}

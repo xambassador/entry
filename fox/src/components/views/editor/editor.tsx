@@ -1,8 +1,5 @@
 import type { GetEntryResponse } from "@/types";
 
-import { lazy, Suspense } from "react";
-import { Loader2 } from "lucide-react";
-
 import { Tags } from "@/components/views/editor/tags";
 
 import { EntryDate } from "./date-header";
@@ -12,12 +9,10 @@ import { ContentInput, TitleInput } from "./form-elements";
 
 import "./editor.css";
 
-const MoodPicker = lazy(() => import("@/components/views/editor/mood-picker").then((m) => ({ default: m.MoodPicker })));
-
-type Props = { entry?: GetEntryResponse; children?: React.ReactNode };
+type Props = { entry?: GetEntryResponse; children?: React.ReactNode; moodPickerSlot?: React.ReactNode };
 
 export function Editor(props: Props) {
-  const { entry, children } = props;
+  const { entry, children, moodPickerSlot } = props;
 
   return (
     <div className="flex flex-col flex-1 gap-5 h-full">
@@ -33,9 +28,7 @@ export function Editor(props: Props) {
               {elements.quote}
               <div>
                 {moodLabel}
-                <Suspense fallback={spinner}>
-                  <MoodPicker mood={entry?.mood} emoji={entry?.emoji} />
-                </Suspense>
+                {moodPickerSlot}
               </div>
               <Tags tags={entry?.tags} />
             </div>
@@ -63,9 +56,4 @@ export function Editor(props: Props) {
   );
 }
 
-const spinner = (
-  <div className="wax-seal cursor-pointer shrink-0 transition-transform duration-150 active:scale-95">
-    <Loader2 className="animate-spin size-4" />
-  </div>
-);
 const moodLabel = <p className="text-[12px] tracking-widest uppercase mb-2 text-ink-faint">Mood</p>;

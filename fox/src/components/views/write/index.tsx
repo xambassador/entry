@@ -1,13 +1,15 @@
 import type { GetEntryResponse } from "@/types";
 
-import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 import { Editor } from "@/components/views/editor/editor";
 
 import { getEntryById } from "@/lib/api";
 
 import { SaveButton } from "../editor/save-button";
+
+const MoodPicker = lazy(() => import("@/components/views/editor/mood-picker").then((m) => ({ default: m.MoodPicker })));
 
 type State =
   | { status: "ready"; entry?: GetEntryResponse }
@@ -62,7 +64,14 @@ export function WriteApp() {
           </div>
         )}
         {state.status === "ready" && (
-          <Editor entry={state.entry}>
+          <Editor
+            entry={state.entry}
+            moodPickerSlot={
+              <Suspense fallback={spinner}>
+                <MoodPicker mood={state.entry?.mood} emoji={state.entry?.emoji} />
+              </Suspense>
+            }
+          >
             {backLink}
             <SaveButton entry={state.entry} />
           </Editor>
@@ -77,4 +86,9 @@ const backLink = (
     <ArrowLeft size={16} strokeWidth={1.5} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
     <span className="text-sm font-body">Back to entries</span>
   </a>
+);
+const spinner = (
+  <div className="wax-seal cursor-pointer shrink-0 transition-transform duration-150 active:scale-95">
+    <Loader2 className="animate-spin size-4" />
+  </div>
 );

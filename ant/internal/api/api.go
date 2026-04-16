@@ -78,6 +78,13 @@ func NewAPI(cfg *config.Config, db *sql.DB) *API {
 
 	router.Post("/api/auth/login", api.Login)
 	router.Get("/api/auth/verify", api.Verify)
+	router.Get("/api/auth/session", func(w http.ResponseWriter, r *http.Request) {
+		if api.isAuthenticated(r) {
+			utils.WriteJSON(w, http.StatusOK, map[string]string{"status": "authenticated"})
+			return
+		}
+		utils.WriteJSON(w, http.StatusUnauthorized, map[string]string{"status": "unauthenticated"})
+	})
 	router.Group(func(r chi.Router) {
 		r.Use(api.RequireAuth)
 		r.Post("/api/auth/logout", api.Logout)
@@ -134,6 +141,11 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // In dev mode it proxies to Vite's /login.html; in production it serves the built file.
 func (a *API) serveLoginPage(w http.ResponseWriter, r *http.Request) {
 	if a.devProxy != nil {
+		if a.isAuthenticated(r) {
+			http.Redirect(w, r, a.writePath, http.StatusTemporaryRedirect)
+			return
+		}
+
 		r2 := r.Clone(r.Context())
 		r2.URL.Path = "/login.html"
 		a.devProxy.ServeHTTP(w, r2)
@@ -182,20 +194,9 @@ func serveEmbeddedFile(w http.ResponseWriter, r *http.Request, name string) {
 
 // checks if the request has a valid session cookie or bearer token.
 func (a *API) isAuthenticated(r *http.Request) bool {
-	if cookie, err := r.Cookie(sessionCookieName); err == nil && cookie.Value != "" {
-		session, err := a.sessionStore.GetByToken(cookie.Value)
-		if err == nil && session != nil {
-			return true
-		}
-	}
-
-	if authHeader := r.Header.Get("Authorization"); authHeader != "" {
-		if token, ok := strings.CutPrefix(authHeader, "Bearer "); ok && token != "" {
-			session, err := a.sessionStore.GetByToken(token)
-			if err == nil && session != nil {
-				return true
-			}
-		}
+	session, err := a.GetSession(r)
+	if err == nil && session != nil {
+		return true
 	}
 
 	return false
