@@ -1,15 +1,16 @@
 import type { GetYearAtGlanceResponse } from "@/types";
 
 import { useState } from "react";
-import * as Tooltip from "@radix-ui/react-tooltip";
+import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/cn";
 import { DAY_LABELS, MONTH_NAMES, MONTH_SHORT } from "@/lib/constant";
 import { getDaysInMonth, getFirstDayOfMonth } from "@/lib/date";
 
+const s = ["th", "st", "nd", "rd"];
+
 function formatOrdinal(day: number): string {
-  const s = ["th", "st", "nd", "rd"];
   const v = day % 100;
   return day + (s[(v - 20) % 10] || s[v] || s[0]);
 }
@@ -19,8 +20,10 @@ function DayCell({
   month,
   emoji,
   isToday,
-  isFuture
+  isFuture,
+  id
 }: {
+  id: string;
   day: number;
   month: number;
   isToday: boolean;
@@ -29,13 +32,37 @@ function DayCell({
 }) {
   const moodColor = undefined;
 
-  const cell = (
-    <button
+  if (!id || id === "") {
+    return (
+      <span
+        title={`${MONTH_NAMES[month]} ${formatOrdinal(day)}`}
+        className={cn(
+          "relative size-6.5 rounded-md flex items-center justify-center",
+          isFuture ? "opacity-[0.12]" : "",
+          isToday && "ring-1 ring-gilt/40 bg-gilt/10",
+          moodColor && !isFuture && "rounded-md"
+        )}
+        style={emoji && moodColor && !isFuture ? { backgroundColor: `${moodColor}18` } : undefined}
+      >
+        {emoji ? (
+          <span className="text-sm leading-none">{emoji}</span>
+        ) : (
+          <span className={cn("size-1 rounded-full", isToday ? "bg-gilt" : "bg-wax-light")} />
+        )}
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      to="/entries/$id"
+      params={{ id }}
       disabled={isFuture}
+      title={`${MONTH_NAMES[month]} ${formatOrdinal(day)}`}
       className={cn(
         "relative size-6.5 rounded-md flex items-center justify-center",
         isFuture ? "opacity-[0.12] cursor-default" : "cursor-pointer",
-        isToday && "ring-1 ring-gilt/40",
+        isToday && "ring-1 ring-gilt/40 bg-gilt/10",
         moodColor && !isFuture && "rounded-md"
       )}
       style={emoji && moodColor && !isFuture ? { backgroundColor: `${moodColor}18` } : undefined}
@@ -45,33 +72,7 @@ function DayCell({
       ) : (
         <span className={cn("size-1 rounded-full", isToday ? "bg-gilt" : "bg-wax-light")} />
       )}
-    </button>
-  );
-
-  if (isFuture || !emoji) return cell;
-
-  return (
-    <Tooltip.Provider delayDuration={300}>
-      <Tooltip.Root>
-        <Tooltip.Trigger asChild>{cell}</Tooltip.Trigger>
-        <Tooltip.Portal>
-          <Tooltip.Content
-            sideOffset={6}
-            className="bg-journal-elevated border border-border-strong rounded-lg px-3 py-2 shadow-2xl shadow-black/50 z-50"
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-base">{emoji}</span>
-              <div>
-                <p className="text-xs text-ink font-medium">
-                  {MONTH_NAMES[month]} {formatOrdinal(day)}
-                </p>
-              </div>
-            </div>
-            <Tooltip.Arrow className="fill-journal-elevated" />
-          </Tooltip.Content>
-        </Tooltip.Portal>
-      </Tooltip.Root>
-    </Tooltip.Provider>
+    </Link>
   );
 }
 
@@ -112,6 +113,7 @@ function MiniMonth({ month, year, data }: { month: number; year: number; data: G
           const day = i + 1;
           const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const emoji = data.entries.find((e) => e.date === key)?.emoji || null;
+          const id = data.entries.find((e) => e.date === key)?.id || "";
           return (
             <DayCell
               key={day}
@@ -120,6 +122,7 @@ function MiniMonth({ month, year, data }: { month: number; year: number; data: G
               emoji={emoji}
               isToday={year === today.getFullYear() && month === today.getMonth() && day === today.getDate()}
               isFuture={new Date(year, month, day) > today}
+              id={id}
             />
           );
         })}

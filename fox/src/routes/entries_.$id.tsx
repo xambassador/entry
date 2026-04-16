@@ -19,7 +19,7 @@ function RouteComponent() {
 }
 
 const backLink = (
-  <Link to="/entries" className="back-link group">
+  <Link to="/" className="back-link group">
     <ArrowLeft size={16} strokeWidth={1.5} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
     <span className="text-sm font-body">Back to entries</span>
   </Link>
