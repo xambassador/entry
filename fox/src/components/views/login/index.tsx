@@ -1,36 +1,8 @@
-import { useCallback, useRef, useState } from "react";
+import { useLogin } from "@/hooks/use-login";
 import { KeyRound, Loader2 } from "lucide-react";
 
-import { login } from "@/lib/api";
-
-type Status = "idle" | "loading" | "error";
-
 export function LoginApp() {
-  const [status, setStatus] = useState<Status>("idle");
-  const [error, setError] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleSubmit = useCallback(async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const passphrase = inputRef.current?.value?.trim();
-    if (!passphrase) {
-      setError("Enter your passphrase");
-      return;
-    }
-
-    setStatus("loading");
-    setError("");
-
-    try {
-      const res = await login(passphrase);
-      window.location.href = res.write_url;
-    } catch {
-      setStatus("error");
-      setError("Wrong passphrase");
-      inputRef.current?.select();
-    }
-  }, []);
-
+  const controls = useLogin();
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="fixed inset-0 pointer-events-none z-0">
@@ -52,22 +24,21 @@ export function LoginApp() {
               <p className="text-ink-muted text-sm tracking-wide">Unlock your journal</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form {...controls.getFormProps({ className: "space-y-6" })}>
               <div>
                 <label htmlFor="passphrase" className="sr-only">
                   Passphrase
                 </label>
                 <div className="relative">
                   <input
-                    ref={inputRef}
-                    id="passphrase"
-                    name="passphrase"
-                    type="password"
-                    autoComplete="current-password"
-                    autoFocus
-                    placeholder="Passphrase"
-                    disabled={status === "loading"}
-                    className="w-full bg-journal-dark/60 text-ink placeholder:text-ink-faint border border-border rounded-lg px-4 py-3 text-sm tracking-wide focus:outline-none focus:border-gilt-dim transition-colors duration-200 disabled:opacity-50"
+                    {...controls.getInputProps({
+                      id: "passphrase",
+                      name: "passphrase",
+                      type: "password",
+                      placeholder: "Passphrase",
+                      className:
+                        "w-full bg-journal-dark/60 text-ink placeholder:text-ink-faint border border-border rounded-lg px-4 py-3 text-sm tracking-wide focus:outline-none focus:border-gilt-dim transition-colors duration-200 disabled:opacity-50"
+                    })}
                   />
                   <KeyRound
                     size={14}
@@ -77,19 +48,20 @@ export function LoginApp() {
                 </div>
               </div>
 
-              {error && (
+              {controls.error && (
                 <p className="text-[13px] text-wax text-center" role="alert">
-                  {error}
+                  {controls.error}
                 </p>
               )}
 
               <button
-                type="submit"
-                disabled={status === "loading"}
-                className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg text-sm font-medium tracking-wide transition-all duration-200 cursor-pointer select-none disabled:cursor-not-allowed bg-journal-card border border-journal-elevated text-ink-secondary hover:bg-journal-hover hover:text-ink active:scale-[0.98]"
+                {...controls.getButtonProps({
+                  className:
+                    "w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg text-sm font-medium tracking-wide transition-all duration-200 cursor-pointer select-none disabled:cursor-not-allowed bg-journal-card border border-journal-elevated text-ink-secondary hover:bg-journal-hover hover:text-ink active:scale-[0.98]"
+                })}
               >
-                {status === "loading" && <Loader2 size={15} className="animate-spin" />}
-                <span>{status === "loading" ? "Unlocking..." : "Unlock"}</span>
+                {controls.status === "loading" && <Loader2 size={15} className="animate-spin" />}
+                <span>{controls.status === "loading" ? "Unlocking..." : "Unlock"}</span>
               </button>
             </form>
           </div>
