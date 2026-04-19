@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { DiaryCover } from "@/components/diary-cover";
+import { RouteError } from "@/components/route-error";
 import { EmptyState } from "@/components/views/entries/empty";
 import { MonthSelector, YearSelector } from "@/components/views/entries/filter";
 import { Header } from "@/components/views/entries/header";
@@ -10,7 +11,10 @@ import { getEntries } from "@/lib/api";
 
 export const Route = createFileRoute("/entries")({
   component: RouteComponent,
-  loader: (opts) => getEntries(undefined, opts.abortController.signal)
+  loader: (opts) => getEntries(undefined, opts.abortController.signal),
+  errorComponent: ({ error }) => {
+    return <RouteError error={error} />;
+  }
 });
 
 function RouteComponent() {

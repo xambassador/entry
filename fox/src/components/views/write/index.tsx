@@ -1,11 +1,12 @@
 import type { GetEntryResponse } from "@/types";
 
 import { lazy, Suspense, useEffect, useState } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, RefreshCw } from "lucide-react";
 
 import { Editor } from "@/components/views/editor/editor";
 
 import { getEntryById } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api-error";
 
 import { SaveButton } from "../editor/save-button";
 
@@ -33,8 +34,8 @@ export function WriteApp() {
       .then((entry) => {
         if (!cancelled) setState({ status: "ready", entry });
       })
-      .catch(() => {
-        if (!cancelled) setState({ status: "error", message: "Could not load entry" });
+      .catch((err) => {
+        if (!cancelled) setState({ status: "error", message: getErrorMessage(err) });
       });
 
     return () => {
@@ -59,8 +60,15 @@ export function WriteApp() {
           </div>
         )}
         {state.status === "error" && (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex flex-col items-center justify-center h-full gap-4">
             <p className="text-wax text-sm">{state.message}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm border border-border text-ink-muted hover:text-ink hover:bg-journal-hover transition-colors duration-200 cursor-pointer"
+            >
+              <RefreshCw className="size-3.5" strokeWidth={1.5} />
+              <span>Retry</span>
+            </button>
           </div>
         )}
         {state.status === "ready" && (

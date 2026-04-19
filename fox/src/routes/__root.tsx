@@ -3,6 +3,8 @@ import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 import { Nav } from "@/components/nav";
+import { NotFound } from "@/components/not-found";
+import { RouteError } from "@/components/route-error";
 
 function RootLayout() {
   return (
@@ -16,4 +18,23 @@ function RootLayout() {
   );
 }
 
-export const Route = createRootRoute({ component: RootLayout });
+function RootErrorComponent({ error }: { error: unknown }) {
+  return (
+    <Fragment>
+      <Nav />
+      <main className="max-w-6xl mx-auto w-full h-[calc(100vh-var(--nav-height))] py-10">
+        <RouteError error={error} />
+      </main>
+    </Fragment>
+  );
+}
+
+function RootNotFound() {
+  return <NotFound />;
+}
+
+export const Route = createRootRoute({
+  component: RootLayout,
+  errorComponent: RootErrorComponent,
+  notFoundComponent: RootNotFound
+});

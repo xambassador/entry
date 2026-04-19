@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 import { useAuth } from "@/components/auth-provider";
+import { RouteError } from "@/components/route-error";
 import { Editor } from "@/components/views/editor/editor";
 import { SaveButton } from "@/components/views/editor/save-button";
 
@@ -15,6 +16,9 @@ export const Route = createFileRoute("/entries_/$id")({
   loader: (ctx) => {
     const { id } = ctx.params;
     return getEntryById(id);
+  },
+  errorComponent: ({ error }) => {
+    return <RouteError error={error} />;
   }
 });
 

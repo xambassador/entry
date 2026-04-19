@@ -4,6 +4,7 @@ import { useCallback, useState, useTransition } from "react";
 import { Check, Loader2, Save } from "lucide-react";
 
 import { createEntry, updateEntry } from "@/lib/api";
+import { getErrorMessage, isErrorCode } from "@/lib/api-error";
 import { cn } from "@/lib/cn";
 
 import { useContent, useEmoji, useMood, useTags, useTitle } from "./store";
@@ -14,6 +15,7 @@ type Props = { entry?: GetEntryResponse };
 export function SaveButton({ entry }: Props) {
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<SaveState>("idle");
+  const [errorMsg, setErrorMsg] = useState("");
   const title = useTitle();
   const content = useContent();
   const mood = useMood();
@@ -46,19 +48,24 @@ export function SaveButton({ entry }: Props) {
           });
         }
         setState("saved");
+        setErrorMsg("");
         setTimeout(() => setState("idle"), 2200);
-      } catch {
+      } catch (err) {
+        const msg = isErrorCode(err, "entry_exists")
+          ? "Entry already exists for this date"
+          : getErrorMessage(err);
         setState("error");
-        setTimeout(() => setState("idle"), 2500);
+        setErrorMsg(msg);
+        setTimeout(() => setState("idle"), 3000);
       }
     });
   }, [title, content, mood, emoji, tags, isEdit, entry]);
 
   const label = {
     idle: isEdit ? "Save changes" : "Save entry",
-    saving: "Saving…",
+    saving: "Saving...",
     saved: "Saved",
-    error: "Failed — try again"
+    error: errorMsg || "Failed"
   }[state];
 
   return (
@@ -66,6 +73,7 @@ export function SaveButton({ entry }: Props) {
       onClick={handleSave}
       disabled={state === "saving"}
       aria-label={label}
+      title={state === "error" ? errorMsg : undefined}
       className={cn(defaultStyles, state === "error" && "text-red-400")}
     >
       {state === "saved" && <Check className="size-3.5" />}

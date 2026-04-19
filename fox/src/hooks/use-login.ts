@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 
 import { login } from "@/lib/api";
+import { getErrorMessage, isErrorCode } from "@/lib/api-error";
 
 type Status = "idle" | "loading" | "error";
 type InputProps = React.ComponentProps<"input">;
@@ -26,9 +27,9 @@ export function useLogin() {
     try {
       const res = await login(passphrase);
       window.location.href = res.write_url;
-    } catch {
+    } catch (err) {
       setStatus("error");
-      setError("Wrong passphrase");
+      setError(isErrorCode(err, "invalid_passphrase") ? "Wrong passphrase" : getErrorMessage(err));
       inputRef.current?.select();
     }
   }, []);

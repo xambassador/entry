@@ -9,12 +9,23 @@ import type {
   UpdateEntryResponse
 } from "@/types";
 
-import { up } from "up-fetch";
+import { isResponseError, up } from "up-fetch";
 
 export const api = up(fetch, () => ({
   baseUrl: "/api",
   timeout: 30000,
-  credentials: "include"
+  credentials: "include",
+  onError(error) {
+    if (isResponseError(error) && error.status === 401) {
+      const isAuthEndpoint =
+        typeof window !== "undefined" &&
+        (window.location.pathname.startsWith("/login") || window.location.pathname.startsWith("/write"));
+
+      if (!isAuthEndpoint) {
+        window.location.href = "/";
+      }
+    }
+  }
 }));
 
 export async function getEntries(query?: { month?: number; year?: number }, signal?: AbortSignal) {
