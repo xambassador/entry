@@ -83,7 +83,7 @@ func NewAPI(cfg *config.Config, db *sql.DB) *API {
 			utils.WriteJSON(w, http.StatusOK, map[string]string{"status": "authenticated"})
 			return
 		}
-		utils.WriteJSON(w, http.StatusUnauthorized, map[string]string{"status": "unauthenticated"})
+		utils.WriteJSON(w, http.StatusOK, map[string]string{"status": "unauthenticated"})
 	})
 	router.Group(func(r chi.Router) {
 		r.Use(api.RequireAuth)
