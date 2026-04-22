@@ -12,7 +12,7 @@ export function LoginApp() {
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-sm">
+      <div className="relative z-10 w-full max-w-sm animate-login-card-in">
         <div className="relative rounded-2xl bg-journal-surface border border-border overflow-hidden">
           <div className="open-diary-paper-texture absolute inset-0 rounded-2xl pointer-events-none" />
           <div className="absolute left-0 top-0 bottom-0 w-0.75 bg-shark" />
@@ -37,7 +37,7 @@ export function LoginApp() {
                       type: "password",
                       placeholder: "Passphrase",
                       className:
-                        "w-full bg-journal-dark/60 text-ink placeholder:text-ink-faint border border-border rounded-lg px-4 py-3 text-sm tracking-wide focus:outline-none focus:border-gilt-dim transition-colors duration-200 disabled:opacity-50"
+                        "w-full bg-journal-dark/60 text-ink placeholder:text-ink-faint border border-border rounded-lg px-4 py-3 text-sm tracking-wide focus:outline-none focus:border-gilt-dim disabled:opacity-50 transition-colors duration-200 ease-active"
                     })}
                   />
                   <KeyRound
@@ -57,7 +57,7 @@ export function LoginApp() {
               <button
                 {...controls.getButtonProps({
                   className:
-                    "w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg text-sm font-medium tracking-wide transition-all duration-200 cursor-pointer select-none disabled:cursor-not-allowed bg-journal-card border border-journal-elevated text-ink-secondary hover:bg-journal-hover hover:text-ink active:scale-[0.98]"
+                    "w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg text-sm font-medium tracking-wide cursor-pointer select-none disabled:cursor-not-allowed bg-journal-card border border-journal-elevated text-ink-secondary hover:bg-journal-hover hover:text-ink active:scale-[0.96] transition-all duration-200 ease-active"
                 })}
               >
                 {controls.status === "loading" && <Loader2 size={15} className="animate-spin" />}

@@ -42,8 +42,13 @@
 
   --shadow-year-at-glance: 2px 0 0 var(--color-journal-elevated);
 
-  --animate-popover-in: popover-in 180ms cubic-bezier(0.2, 0, 0, 1);
-  --animate-popover-out: popover-out 120ms cubic-bezier(0.2, 0, 0, 1);
+  --animate-popover-in: popover-in 180ms cubic-bezier(0.23, 1, 0.32, 1);
+  --animate-popover-out: popover-out 120ms cubic-bezier(0.23, 1, 0.32, 1);
+  --animate-login-card-in: login-card-in 200ms cubic-bezier(0.23, 1, 0.32, 1) both;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-active: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 * {
@@ -58,6 +63,22 @@
 
 body {
   @apply bg-journal-dark text-ink font-display overflow-x-hidden antialiased min-h-screen;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 #root {
@@ -65,14 +86,14 @@ body {
 }
 
 .back-link {
-  @apply flex items-center gap-2 text-ink-muted hover:text-ink transition-colors duration-200 cursor-pointer;
+  @apply flex items-center gap-2 text-ink-muted hover:text-ink transition-[colors,transform] duration-200 cursor-pointer active:scale-[0.96];
 }
 
 .dot-leader {
   border-bottom: 1px dotted var(--color-ink-faint);
   opacity: 0.25;
   margin-bottom: 4px;
-  transition: opacity 0.2s ease;
+  transition: opacity 200ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .entry-row::before {
@@ -85,7 +106,7 @@ body {
   border-radius: 1px;
   background: var(--color-gilt);
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 200ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .entry-row:hover::before {
@@ -103,7 +124,7 @@ body {
 @keyframes popover-in {
   from {
     opacity: 0;
-    transform: scale(0.92) translateY(-4px);
+    transform: scale(0.95) translateY(-4px);
   }
   to {
     opacity: 1;
@@ -118,6 +139,17 @@ body {
   }
   to {
     opacity: 0;
-    transform: scale(0.92) translateY(-4px);
+    transform: scale(0.95) translateY(-4px);
+  }
+}
+
+@keyframes login-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }

@@ -10,7 +10,7 @@ function RootLayout() {
   return (
     <Fragment>
       <Nav />
-      <main className="max-w-6xl mx-auto w-full h-[calc(100vh-var(--nav-height))] py-10">
+      <main className="max-w-6xl mx-auto w-full h-[calc(100vh-var(--nav-height))] py-10 px-4 sm:px-6 lg:px-0">
         <Outlet />
       </main>
       <TanStackRouterDevtools />
@@ -22,7 +22,7 @@ function RootErrorComponent({ error }: { error: unknown }) {
   return (
     <Fragment>
       <Nav />
-      <main className="max-w-6xl mx-auto w-full h-[calc(100vh-var(--nav-height))] py-10">
+      <main className="max-w-6xl mx-auto w-full h-[calc(100vh-var(--nav-height))] py-10 px-4 sm:px-6 lg:px-0">
         <RouteError error={error} />
       </main>
     </Fragment>

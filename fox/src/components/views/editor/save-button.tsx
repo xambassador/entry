@@ -51,9 +51,7 @@ export function SaveButton({ entry }: Props) {
         setErrorMsg("");
         setTimeout(() => setState("idle"), 2200);
       } catch (err) {
-        const msg = isErrorCode(err, "entry_exists")
-          ? "Entry already exists for this date"
-          : getErrorMessage(err);
+        const msg = isErrorCode(err, "entry_exists") ? "Entry already exists for this date" : getErrorMessage(err);
         setState("error");
         setErrorMsg(msg);
         setTimeout(() => setState("idle"), 3000);
@@ -86,7 +84,7 @@ export function SaveButton({ entry }: Props) {
 }
 
 const defaultStyles =
-  "group relative flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border transition-all duration-300 cursor-pointer select-none disabled:cursor-not-allowed text-ink-muted active:scale-[0.97] bg-journal-card border-journal-elevated hover:bg-journal-page";
+  "group relative flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border cursor-pointer select-none disabled:cursor-not-allowed text-ink-muted active:scale-[0.96] bg-journal-card border-journal-elevated hover:bg-journal-page transition-all duration-200 ease-active";
 const spinner = <Loader2 className="animate-spin transition-transform duration-200" />;
 const shimmer = (
   <span

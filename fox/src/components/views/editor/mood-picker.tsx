@@ -44,7 +44,7 @@ export function MoodPicker(props: { mood?: string; emoji?: string }) {
       <Popover.Root open={open} onOpenChange={setOpen}>
         <Popover.Trigger asChild>
           <button
-            className="wax-seal cursor-pointer shrink-0 transition-transform duration-150 active:scale-95"
+            className="wax-seal cursor-pointer shrink-0 active:scale-[0.96] transition-transform duration-150 ease-active"
             aria-label="Pick an emoji"
           >
             <span className="text-base leading-none">{hasEmoji ? emoji : "?"}</span>
