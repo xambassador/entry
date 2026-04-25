@@ -9,10 +9,15 @@ import { ContentInput, TitleInput } from "./form-elements";
 
 import "./editor.css";
 
-type Props = { entry?: GetEntryResponse; children?: React.ReactNode; moodPickerSlot?: React.ReactNode };
+type Props = {
+  entry?: GetEntryResponse;
+  children?: React.ReactNode;
+  moodPickerSlot?: React.ReactNode;
+  isAuthenticated?: boolean;
+};
 
 export function Editor(props: Props) {
-  const { entry, children, moodPickerSlot } = props;
+  const { entry, children, moodPickerSlot, isAuthenticated } = props;
 
   return (
     <div className="flex flex-col flex-1 gap-5 h-full">
@@ -30,7 +35,7 @@ export function Editor(props: Props) {
                 {moodLabel}
                 {moodPickerSlot}
               </div>
-              <Tags tags={entry?.tags} />
+              <Tags tags={entry?.tags} isAuthenticated={isAuthenticated} />
             </div>
             <div className="relative z-3 flex items-end justify-between mt-6">
               <div className="flex flex-col gap-2">
@@ -44,9 +49,17 @@ export function Editor(props: Props) {
           {elements.diaryFold}
           <div className="open-diary-right open-diary-paper-texture w-1/2 max-[900px]:w-full relative shrink-0 rounded-r-3xl bg-journal-page">
             <div className="relative z-3 h-full flex flex-col px-8 pt-8 pb-12">
-              <TitleInput title={entry?.title} />
+              {isAuthenticated ? (
+                <TitleInput title={entry?.title} className="title-input" />
+              ) : (
+                <h1 className="title-input">{entry?.title}</h1>
+              )}
               {elements.glitDimBorder}
-              <ContentInput content={entry?.content} />
+              {isAuthenticated ? (
+                <ContentInput content={entry?.content} className="open-diary-textarea content-input" />
+              ) : (
+                <p className="open-diary-textarea content-input">{entry?.content}</p>
+              )}
             </div>
             {elements.diaryCurl}
           </div>

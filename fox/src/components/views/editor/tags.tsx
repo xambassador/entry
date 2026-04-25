@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Hash } from "lucide-react";
 
+import { cn } from "@/lib/cn";
+
 import { updateTags } from "./store";
 
-export function Tags(props: { tags?: string[] }) {
-  const { tags: initialTags } = props;
+export function Tags(props: { tags?: string[]; isAuthenticated?: boolean }) {
+  const { tags: initialTags, isAuthenticated } = props;
   const [tags, setTags] = useState<string[]>(initialTags || []);
   const ref = useRef<HTMLInputElement>(null);
 
@@ -41,33 +43,40 @@ export function Tags(props: { tags?: string[] }) {
         {tags.map((tag) => (
           <span
             key={tag}
-            className="px-2 rounded-full text-xs tracking-wider uppercase cursor-pointer group flex items-center gap-1 transition-all duration-200 text-ink-faint border border-gilt-dim"
-            onClick={() => handleRemoveTag(tag)}
+            className={cn(
+              "px-2 rounded-full text-xs tracking-wider uppercase group flex items-center gap-1 transition-all duration-200 text-ink-faint border border-gilt-dim",
+              isAuthenticated && "cursor-pointer"
+            )}
+            onClick={() => (isAuthenticated ? handleRemoveTag(tag) : undefined)}
           >
             {tag}
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-wax-light">&#x2715;</span>
+            {isAuthenticated && xIcon}
           </span>
         ))}
-        <input
-          ref={ref}
-          type="text"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleAddTag();
-            }
 
-            if (e.key === "Backspace" && !ref.current?.value && tags.length) {
-              e.preventDefault();
-              handleRemoveTag(tags[tags.length - 1]);
-            }
-          }}
-          placeholder="add tag..."
-          className="bg-transparent text-xs tracking-wider outline-none w-16 text-ink-muted"
-        />
+        {isAuthenticated && (
+          <input
+            ref={ref}
+            type="text"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAddTag();
+              }
+
+              if (e.key === "Backspace" && !ref.current?.value && tags.length) {
+                e.preventDefault();
+                handleRemoveTag(tags[tags.length - 1]);
+              }
+            }}
+            placeholder="add tag..."
+            className="bg-transparent text-xs tracking-wider outline-none w-16 text-ink-muted"
+          />
+        )}
       </div>
     </div>
   );
 }
 
 const hashIcon = <Hash size={11} strokeWidth={1.5} className="text-ink-faint" />;
+const xIcon = <span className="opacity-0 group-hover:opacity-100 transition-opacity text-wax-light">&#x2715;</span>;

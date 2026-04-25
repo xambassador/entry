@@ -25,13 +25,12 @@ export const Route = createFileRoute("/entries_/$id")({
 function RouteComponent() {
   const entry = Route.useLoaderData();
   const auth = useAuth();
-  const isAuthenticated = auth.status === "success" && auth.isAuthenticated;
 
   return (
     <Editor
       entry={entry}
       moodPickerSlot={
-        isAuthenticated ? (
+        auth.isAuthenticated ? (
           <Suspense fallback={spinner}>
             <MoodPicker mood={entry?.mood} emoji={entry?.emoji} />
           </Suspense>
@@ -41,9 +40,10 @@ function RouteComponent() {
           </span>
         )
       }
+      isAuthenticated={auth.isAuthenticated}
     >
       {backLink}
-      {auth.status === "success" && auth.isAuthenticated && <SaveButton entry={entry} />}
+      {auth.isAuthenticated && <SaveButton entry={entry} />}
     </Editor>
   );
 }

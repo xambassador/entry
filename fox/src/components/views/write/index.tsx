@@ -75,6 +75,7 @@ export function WriteApp() {
                 <MoodPicker mood={state.entry?.mood} emoji={state.entry?.emoji} />
               </Suspense>
             }
+            isAuthenticated
           >
             {backLink}
             <SaveButton entry={state.entry} />

@@ -2,8 +2,8 @@ import { useEffect } from "react";
 
 import { updateContent, updateTitle } from "./store";
 
-export function TitleInput(props: { title?: string }) {
-  const { title: defaultValue } = props;
+export function TitleInput(props: { title?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  const { title: defaultValue, ...rest } = props;
 
   useEffect(() => {
     updateTitle(defaultValue || "");
@@ -13,17 +13,18 @@ export function TitleInput(props: { title?: string }) {
     <input
       type="text"
       defaultValue={defaultValue}
+      placeholder="Give this entry a title..."
+      {...rest}
       onChange={(e) => {
         updateTitle(e.target.value);
+        rest.onChange?.(e);
       }}
-      placeholder="Give this entry a title..."
-      className="w-full bg-transparent font-display text-2xl font-light tracking-wide outline-none mb-4 text-ink"
     />
   );
 }
 
-export function ContentInput(props: { content?: string }) {
-  const { content: defaultValue } = props;
+export function ContentInput(props: { content?: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const { content: defaultValue, ...rest } = props;
 
   useEffect(() => {
     updateContent(defaultValue || "");
@@ -32,12 +33,12 @@ export function ContentInput(props: { content?: string }) {
   return (
     <textarea
       defaultValue={defaultValue}
+      placeholder="Dear diary, today I..."
+      {...rest}
       onChange={(e) => {
         updateContent(e.target.value);
+        rest.onChange?.(e);
       }}
-      placeholder="Dear diary, today I..."
-      className="open-diary-textarea flex-1 min-h-105 bg-transparent text-ink caret-gilt resize-none text-base w-full border-none p-0 placeholder:italic placeholder:text-ink-faint"
-      spellCheck={false}
     />
   );
 }

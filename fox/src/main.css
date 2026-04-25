@@ -125,6 +125,14 @@ p {
   @apply active:scale-[0.96] transition-transform duration-150;
 }
 
+.title-input {
+  @apply w-full bg-transparent font-display text-2xl font-light tracking-wide outline-none mb-4 text-ink;
+}
+
+.content-input {
+  @apply flex-1 min-h-105 bg-transparent text-ink caret-gilt resize-none text-base w-full border-none p-0 placeholder:italic placeholder:text-ink-faint;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
