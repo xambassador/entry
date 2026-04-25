@@ -1,0 +1,16 @@
+.git
+.gitignore
+.opencode
+
+**/node_modules
+**/.DS_Store
+
+fox/dist
+fox/.vinxi
+fox/.output
+
+ant/bin
+ant/data
+ant/tmp
+ant/coverage
+ant/reports

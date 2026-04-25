@@ -1,0 +1,27 @@
+services:
+  ant:
+    image: entry-ant:latest
+    build:
+      context: ..
+      dockerfile: ant/Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      ENTRY_PORT: ${ENTRY_PORT:-3000}
+      ENTRY_DATA_DIR: /var/lib/entry/data
+      ENTRY_DB_PATH: /var/lib/entry/sqlite/entry.db
+      ENTRY_DEV_PROXY: ${ENTRY_DEV_PROXY:-}
+      ENTRY_READ_TIMEOUT: ${ENTRY_READ_TIMEOUT:-}
+      ENTRY_READ_HEADER_TIMEOUT: ${ENTRY_READ_HEADER_TIMEOUT:-}
+      ENTRY_WRITE_TIMEOUT: ${ENTRY_WRITE_TIMEOUT:-}
+      ENTRY_IDLE_TIMEOUT: ${ENTRY_IDLE_TIMEOUT:-}
+      ENTRY_REQUEST_TIMEOUT: ${ENTRY_REQUEST_TIMEOUT:-}
+      ENTRY_LIST_DEFAULT_LIMIT: ${ENTRY_LIST_DEFAULT_LIMIT:-}
+      ENTRY_LIST_MAX_LIMIT: ${ENTRY_LIST_MAX_LIMIT:-}
+      ENTRY_SESSION_DURATION: ${ENTRY_SESSION_DURATION:-}
+    ports:
+      - "${ENTRY_PORT:-3000}:3000"
+    volumes:
+      - ${ENTRY_DATA_HOST_DIR:-./data}:/var/lib/entry/data
+      - ${ENTRY_SQLITE_HOST_DIR:-./sqlite}:/var/lib/entry/sqlite
+    restart: unless-stopped
