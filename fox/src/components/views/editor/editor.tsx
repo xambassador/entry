@@ -58,7 +58,7 @@ export function Editor(props: Props) {
               {isAuthenticated ? (
                 <ContentInput content={entry?.content} className="open-diary-textarea content-input" />
               ) : (
-                <p className="open-diary-textarea content-input">{entry?.content}</p>
+                <p className="open-diary-textarea content-input whitespace-pre-wrap">{entry?.content}</p>
               )}
             </div>
             {elements.diaryCurl}
