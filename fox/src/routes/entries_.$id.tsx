@@ -52,7 +52,7 @@ function RouteComponent() {
 const backLink = (
   <Link
     to="/entries"
-    className="back-link group"
+    className="back-link group focus-ring"
     search={(prev) => ({ month: prev.month ?? CURRENT_MONTH, year: prev.year || CURRENT_YEAR })}
   >
     <ArrowLeft size={16} strokeWidth={1.5} className="group-hover:-translate-x-0.5 transition-transform duration-200" />

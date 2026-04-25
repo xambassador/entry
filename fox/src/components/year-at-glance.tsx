@@ -59,7 +59,7 @@ function DayCell({
       disabled={isFuture}
       title={`${MONTH_NAMES[month]} ${formatOrdinal(day)}`}
       className={cn(
-        "relative size-6.5 rounded-md flex items-center justify-center active:scale-[0.95] transition-all duration-150",
+        "relative size-6.5 rounded-md flex items-center justify-center active:scale-[0.95] transition-all duration-150 focus-ring",
         isFuture ? "opacity-[0.12] cursor-default" : "cursor-pointer hover:bg-gilt/10",
         isToday && "ring-1 ring-gilt/40 bg-gilt/10",
         moodColor && !isFuture && "rounded-md"
