@@ -33,12 +33,15 @@ function RouteComponent() {
       moodPickerSlot={
         auth.isAuthenticated ? (
           <Suspense fallback={spinner}>
-            <MoodPicker mood={entry?.mood} emoji={entry?.emoji} />
+            <MoodPicker mood={entry.mood} emoji={entry.emoji} />
           </Suspense>
         ) : (
-          <span className="wax-seal cursor-pointer shrink-0 transition-transform duration-150 active:scale-95">
-            <span className="text-base leading-none">{entry?.emoji ? entry.emoji : "?"}</span>
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="wax-seal cursor-pointer shrink-0 transition-transform duration-150 active:scale-95">
+              <span className="text-base leading-none">{entry.emoji ? entry.emoji : "?"}</span>
+            </span>
+            <span className="text-xs tracking-wider text-ink-muted">{entry.mood}</span>
+          </div>
         )
       }
       isAuthenticated={auth.isAuthenticated}
