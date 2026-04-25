@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { BookX, ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookX } from "lucide-react";
+
+import { CURRENT_YEAR } from "@/lib/constant";
 
 export function NotFound() {
   return (
@@ -16,6 +18,7 @@ export function NotFound() {
 
         <Link
           to="/"
+          search={{ year: CURRENT_YEAR }}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm border border-border text-ink-muted hover:text-ink hover:bg-journal-hover transition-colors duration-200"
         >
           <ArrowLeft className="size-3.5" strokeWidth={1.5} />
