@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 
 export function Nav() {
   return (
-    <header className="max-w-6xl mx-auto">
+    <header className="max-w-6xl mx-auto px-4">
       <nav className="h-(--nav-height) flex items-center border-b border-border justify-between">
         <Link to="/" className="active:scale-[0.96] transition-transform duration-150">
           <h1 className="text-2xl font-bold">Entry</h1>

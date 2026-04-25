@@ -23,7 +23,10 @@ export function DiaryCover(props: Props) {
 
           <div
             {...shellProps}
-            className={cn("flex-1 h-full flex flex-col items-center justify-center", shellProps?.className)}
+            className={cn(
+              "flex-1 h-full flex flex-col items-center justify-center w-full overflow-hidden",
+              shellProps?.className
+            )}
           >
             {children}
           </div>

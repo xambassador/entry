@@ -28,7 +28,7 @@ export function EntryRow({ entry }: { entry: Entry }) {
 
       <span className="w-2 dot-leader opacity-0 group-hover:opacity-100 transition-opacity duration-200 shrink-0 hidden sm:block" />
       <span className="text-sm text-ink-muted group-hover:text-gilt transition-colors duration-200 shrink-0 tabular-nums">
-        <span className="text-ink-faint text-sm mr-1">{getDayName(entry.date).dayName}</span>
+        <span className="text-ink-faint text-sm mr-1 hidden sm:inline">{getDayName(entry.date).dayName}</span>
         {getDayName(entry.date).day}
       </span>
     </Link>

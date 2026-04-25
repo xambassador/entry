@@ -19,8 +19,8 @@ export const Route = createFileRoute("/entries")({
 
 function RouteComponent() {
   return (
-    <DiaryCover className="max-h-full" shellProps={{ className: "py-5" }}>
-      <div className="flex flex-col gap-4 max-w-2xl mx-auto size-full overflow-hidden">
+    <DiaryCover className="max-h-full" shellProps={{ className: "py-5 px-3 sm:px-0" }}>
+      <div className="flex flex-col gap-4 max-w-2xl w-full mx-auto size-full overflow-hidden">
         <Header />
         <YearSelector />
         <MonthSelector />
