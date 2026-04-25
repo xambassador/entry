@@ -8,10 +8,45 @@ import { Header } from "@/components/views/entries/header";
 import { Entries } from "@/components/views/entries/list";
 
 import { getEntries } from "@/lib/api";
+import { CURRENT_MONTH, CURRENT_YEAR, EARLIEST_YEAR } from "@/lib/constant";
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function parseYear(searchYear: number | undefined): number {
+  if (!searchYear) {
+    return CURRENT_YEAR;
+  }
+  return clamp(searchYear, EARLIEST_YEAR, CURRENT_YEAR);
+}
+
+function parseMonth(searchMonth: number | undefined, year: number): number {
+  const maxMonth = year === CURRENT_YEAR ? CURRENT_MONTH : 11;
+  if (searchMonth === undefined) {
+    return maxMonth;
+  }
+  return clamp(searchMonth, 0, maxMonth);
+}
 
 export const Route = createFileRoute("/entries")({
   component: RouteComponent,
-  loader: (opts) => getEntries(undefined, opts.abortController.signal),
+  validateSearch: (search: { year?: number; month?: number }) => {
+    const year = parseYear(search.year);
+    return {
+      year,
+      month: parseMonth(search.month, year)
+    };
+  },
+  loaderDeps: ({ search }) => ({ year: search.year, month: search.month }),
+  loader: ({ deps, abortController }) =>
+    getEntries(
+      {
+        year: deps.year,
+        month: deps.month + 1
+      },
+      abortController.signal
+    ),
   errorComponent: ({ error }) => {
     return <RouteError error={error} />;
   }

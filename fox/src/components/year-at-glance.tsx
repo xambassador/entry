@@ -1,6 +1,5 @@
 import type { GetYearAtGlanceResponse } from "@/types";
 
-import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -144,10 +143,48 @@ function YearStats({ total }: { total: number }) {
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-export function YearAtGlance(props: { data: GetYearAtGlanceResponse }) {
-  const { data } = props;
-  const [year, setYear] = useState(CURRENT_YEAR);
+export function YearAtGlance(props: {
+  data: GetYearAtGlanceResponse;
+  year: number;
+  onYearChange: (year: number) => void;
+}) {
+  const { data, year, onYearChange } = props;
 
+  return (
+    <YearAtGlanceContainer>
+      <div className="flex items-center justify-between mb-5 shrink-0">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onYearChange(year - 1)}
+            className="p-1 text-ink-faint hover:text-gilt cursor-pointer active:scale-[0.96] min-w-10 min-h-10 flex items-center justify-center"
+          >
+            <ChevronLeft size={14} strokeWidth={1.5} />
+          </button>
+          <span className="text-lg text-gilt tracking-wide w-12 text-center tabular-nums">{year}</span>
+          <button
+            onClick={() => onYearChange(year + 1)}
+            disabled={year >= CURRENT_YEAR}
+            className="p-1 text-ink-faint hover:text-gilt cursor-pointer disabled:opacity-20 disabled:cursor-default active:scale-[0.96] min-w-10 min-h-10 flex items-center justify-center"
+          >
+            <ChevronRight size={14} strokeWidth={1.5} />
+          </button>
+        </div>
+
+        <YearStats total={data.total} />
+      </div>
+
+      <div className="h-px bg-linear-to-r from-transparent via-gilt/12 to-transparent mb-10 shrink-0" />
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-5 sm:gap-x-6 lg:flex-1 lg:min-h-0">
+        {Array.from({ length: 12 }).map((_, month) => (
+          <MiniMonth key={`${year}-${month}`} month={month} year={year} data={data} />
+        ))}
+      </div>
+    </YearAtGlanceContainer>
+  );
+}
+
+export function YearAtGlanceContainer(props: React.PropsWithChildren) {
   return (
     <div className="w-full max-w-(--year-at-glance-width) mx-auto h-auto lg:h-full">
       <div className="h-auto lg:h-full relative">
@@ -156,42 +193,7 @@ export function YearAtGlance(props: { data: GetYearAtGlanceResponse }) {
             <div className="bg-shark w-0.5 h-full" />
           </div>
 
-          <div className="flex-1 flex flex-col py-5 px-4 sm:py-7 sm:px-7 lg:min-h-0">
-            <div className="flex items-center justify-between mb-5 shrink-0">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setYear((y) => y - 1)}
-                  className="p-1 text-ink-faint hover:text-gilt cursor-pointer active:scale-[0.96] min-w-[40px] min-h-[40px] flex items-center justify-center"
-                  style={{
-                    transition: "color 150ms cubic-bezier(0.23,1,0.32,1), transform 100ms cubic-bezier(0.23,1,0.32,1)"
-                  }}
-                >
-                  <ChevronLeft size={14} strokeWidth={1.5} />
-                </button>
-                <span className="text-lg text-gilt tracking-wide w-12 text-center tabular-nums">{year}</span>
-                <button
-                  onClick={() => setYear((y) => y + 1)}
-                  disabled={year >= CURRENT_YEAR}
-                  className="p-1 text-ink-faint hover:text-gilt cursor-pointer disabled:opacity-20 disabled:cursor-default active:scale-[0.96] min-w-[40px] min-h-[40px] flex items-center justify-center"
-                  style={{
-                    transition: "color 150ms cubic-bezier(0.23,1,0.32,1), transform 100ms cubic-bezier(0.23,1,0.32,1)"
-                  }}
-                >
-                  <ChevronRight size={14} strokeWidth={1.5} />
-                </button>
-              </div>
-
-              <YearStats total={data.total} />
-            </div>
-
-            <div className="h-px bg-linear-to-r from-transparent via-gilt/12 to-transparent mb-10 shrink-0" />
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-5 sm:gap-x-6 lg:flex-1 lg:min-h-0">
-              {Array.from({ length: 12 }).map((_, month) => (
-                <MiniMonth key={`${year}-${month}`} month={month} year={year} data={data} />
-              ))}
-            </div>
-          </div>
+          <div className="flex-1 flex flex-col py-5 px-4 sm:py-7 sm:px-7 lg:min-h-0">{props.children}</div>
         </div>
       </div>
     </div>

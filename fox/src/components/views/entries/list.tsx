@@ -1,4 +1,3 @@
-import { useSelectedMonth, useSelectedYear } from "@/stores/entry-list";
 import { getRouteApi } from "@tanstack/react-router";
 
 import { cn } from "@/lib/cn";
@@ -8,8 +7,7 @@ import { EntryRow } from "./entry";
 
 export function Entries() {
   const routerCache = getRouteApi("/entries");
-  const month = useSelectedMonth();
-  const year = useSelectedYear();
+  const { month, year } = routerCache.useSearch();
   const { entries, total } = routerCache.useLoaderData();
   const { weeks } = groupEntriesByWeek(entries, month, year);
   return (

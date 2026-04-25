@@ -1,8 +1,9 @@
+import { memo } from "react";
 import { ITEM_W, useHorizontalStrip } from "@/hooks/use-horizontal-strip";
 
 import { CURRENT_YEAR, EARLIEST_YEAR, YEARS } from "@/lib/constant";
 
-export function YearStrip({
+export const YearStrip = memo(function YearStrip({
   year,
   onYearChange,
   onCommit
@@ -70,4 +71,4 @@ export function YearStrip({
       </div>
     </div>
   );
-}
+});

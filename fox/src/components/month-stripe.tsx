@@ -1,8 +1,9 @@
+import { memo } from "react";
 import { ITEM_W, useHorizontalStrip } from "@/hooks/use-horizontal-strip";
 
 import { MONTH_NAMES, MONTH_SHORT, MONTHS } from "@/lib/constant";
 
-export function MonthStrip({
+export const MonthStrip = memo(function MonthStrip({
   month,
   maxMonth,
   onMonthChange,
@@ -78,4 +79,4 @@ export function MonthStrip({
       </div>
     </div>
   );
-}
+});
