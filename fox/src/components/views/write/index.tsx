@@ -45,20 +45,16 @@ export function WriteApp() {
 
   return (
     <div className="min-h-screen">
-      <header className="max-w-6xl mx-auto w-full">
-        <nav className="h-(--nav-height) flex items-center border-b border-border justify-between">
-          <a href="/">
+      <header className="header">
+        <nav className="nav">
+          <a href="/" className="logo">
             <h1 className="text-2xl font-bold">Entry</h1>
           </a>
         </nav>
       </header>
 
       <main className="max-w-6xl mx-auto w-full h-[calc(100vh-var(--nav-height))] py-10">
-        {state.status === "loading" && (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-ink-muted text-sm tracking-wide">Loading entry...</p>
-          </div>
-        )}
+        {state.status === "loading" && loadingEntry}
         {state.status === "error" && (
           <div className="flex flex-col items-center justify-center h-full gap-4">
             <p className="text-wax text-sm">{state.message}</p>
@@ -98,5 +94,10 @@ const backLink = (
 const spinner = (
   <div className="wax-seal cursor-pointer shrink-0 transition-transform duration-150 active:scale-95">
     <Loader2 className="animate-spin size-4" />
+  </div>
+);
+const loadingEntry = (
+  <div className="flex items-center justify-center h-full">
+    <p className="text-ink-muted text-sm tracking-wide">Loading entry...</p>
   </div>
 );

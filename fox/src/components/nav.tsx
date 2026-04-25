@@ -2,9 +2,9 @@ import { Link } from "@tanstack/react-router";
 
 export function Nav() {
   return (
-    <header className="max-w-6xl mx-auto px-4">
-      <nav className="h-(--nav-height) flex items-center border-b border-border justify-between">
-        <Link to="/" className="active:scale-[0.96] transition-transform duration-150">
+    <header className="header">
+      <nav className="nav">
+        <Link to="/" className="logo">
           <h1 className="text-2xl font-bold">Entry</h1>
         </Link>
         <ul className="flex items-center gap-1 bg-journal-surface/60 backdrop-blur-sm rounded-full p-1 border border-border">

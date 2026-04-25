@@ -113,6 +113,18 @@ p {
   opacity: 0.5;
 }
 
+.header {
+  @apply max-w-6xl mx-auto px-4;
+}
+
+.nav {
+  @apply h-(--nav-height) flex items-center border-b border-border justify-between;
+}
+
+.logo {
+  @apply active:scale-[0.96] transition-transform duration-150;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
