@@ -58,7 +58,7 @@ export function Editor(props: Props) {
               {isAuthenticated ? (
                 <ContentInput content={entry?.content} className="open-diary-textarea content-input" />
               ) : (
-                <p className="open-diary-textarea content-input whitespace-pre-wrap">{entry?.content}</p>
+                <p className="open-diary-textarea content-input whitespace-pre-wrap">{renderContentWithLinks(entry?.content)}</p>
               )}
             </div>
             {elements.diaryCurl}
@@ -67,6 +67,57 @@ export function Editor(props: Props) {
       </div>
     </div>
   );
+}
+
+const urlSplitRegex = /(\b(?:https?:\/\/|www\.)[^\s]+)/gi;
+const urlTokenRegex = /^(?:https?:\/\/|www\.)[^\s]+$/i;
+
+function renderContentWithLinks(content?: string) {
+  if (!content) {
+    return null;
+  }
+
+  const parts = content.split(urlSplitRegex);
+
+  return parts.map((part, index) => {
+    if (!urlTokenRegex.test(part)) {
+      return <span key={`text-${index}`}>{part}</span>;
+    }
+
+    const { coreUrl, trailingPunctuation } = splitTrailingPunctuation(part);
+
+    if (!coreUrl) {
+      return <span key={`text-${index}`}>{part}</span>;
+    }
+
+    const href = coreUrl.startsWith("www.") ? `https://${coreUrl}` : coreUrl;
+
+    return (
+      <span key={`link-${index}`}>
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 break-all"
+        >
+          {coreUrl}
+        </a>
+        {trailingPunctuation}
+      </span>
+    );
+  });
+}
+
+function splitTrailingPunctuation(url: string) {
+  let coreUrl = url;
+  let trailingPunctuation = "";
+
+  while (/[),.!?;:]/.test(coreUrl[coreUrl.length - 1] ?? "")) {
+    trailingPunctuation = `${coreUrl[coreUrl.length - 1]}${trailingPunctuation}`;
+    coreUrl = coreUrl.slice(0, -1);
+  }
+
+  return { coreUrl, trailingPunctuation };
 }
 
 const moodLabel = <p className="text-[12px] tracking-widest uppercase mb-2 text-ink-faint">Mood</p>;
