@@ -187,14 +187,12 @@ export function YearAtGlance(props: {
 export function YearAtGlanceContainer(props: React.PropsWithChildren) {
   return (
     <div className="w-full max-w-(--year-at-glance-width) mx-auto h-auto lg:h-full">
-      <div className="h-auto lg:h-full relative">
-        <div className="flex rounded-l-3xl rounded-r-5xl bg-journal-surface h-auto lg:h-full w-full shadow-year-at-glance">
-          <div className="min-w-[3%] h-auto lg:h-full flex justify-end shrink-0">
-            <div className="bg-shark w-0.5 h-full" />
-          </div>
-
-          <div className="flex-1 flex flex-col py-5 px-4 sm:py-7 sm:px-7 lg:min-h-0">{props.children}</div>
+      <div className="flex rounded-l-3xl rounded-r-5xl bg-journal-surface h-auto lg:h-full w-full shadow-year-at-glance">
+        <div className="min-w-[3%] h-auto lg:h-full flex justify-end shrink-0">
+          <div className="bg-shark w-0.5 h-full" />
         </div>
+
+        <div className="flex-1 flex flex-col py-5 px-4 sm:py-7 sm:px-7 lg:min-h-0">{props.children}</div>
       </div>
     </div>
   );
