@@ -86,7 +86,7 @@ p {
 }
 
 .back-link {
-  @apply flex items-center gap-2 text-ink-muted hover:text-ink transition-[colors,transform] duration-200 cursor-pointer active:scale-[0.96];
+  @apply flex items-center gap-2 text-ink-muted hover:text-ink transition-[colors,transform] duration-200 cursor-pointer;
 }
 
 .dot-leader {
