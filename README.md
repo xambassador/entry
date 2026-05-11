@@ -6,7 +6,6 @@ A personal journal app with a modern frontend and a Go backend.
 
 - `fox`: frontend (Vite + TypeScript + React)
 - `ant`: backend (Go + SQLite)
-- `Makefile`: one-command local workflows
 
 ## Quick Start (Local Development)
 
@@ -45,18 +44,13 @@ openssl rand -base64 32
 make dev
 ```
 
-App URLs while developing:
-
-- Frontend dev server: http://localhost:5173
-- Backend: http://localhost:3000
+Open your browser to http://localhost:3000 to access the app.
 
 ## Build Commands
 
 ```bash
 make build
 ```
-
-This builds frontend assets and compiles the backend binary.
 
 ## Test Commands
 
@@ -68,7 +62,7 @@ make test
 
 ### Build image
 
-Run from the repository root (important for Docker build context):
+Run from the repository root
 
 ```bash
 docker build -f ant/Dockerfile -t entry-ant:latest .
@@ -98,19 +92,11 @@ docker run --name entry-ant \
   entry-ant:latest
 ```
 
-Notes:
-
-- `EXPOSE 3000` in Dockerfile is metadata only.
-- You must publish ports with `-p host:container`.
-- If `ENTRY_PORT` changes, update the right side of `-p` accordingly.
-
 ## Docker Compose
 
 ```bash
 docker compose -f ant/docker-compose.yml up --build
 ```
-
-The compose file already uses the correct build context for `ant/` and `fox/` copies.
 
 ## Environment Variables
 
@@ -129,13 +115,3 @@ The compose file already uses the correct build context for `ant/` and `fox/` co
 | `ENTRY_LIST_DEFAULT_LIMIT` | No | `30` | Default list page size |
 | `ENTRY_LIST_MAX_LIMIT` | No | `100` | Max list page size |
 | `ENTRY_SESSION_DURATION` | No | `168h` | Session lifetime |
-
-## Project Layout
-
-```text
-entry/
-├─ ant/        # Go backend
-├─ fox/        # Frontend app
-├─ docs/       # Notes and docs
-└─ Makefile    # Dev/build/test helpers
-```
