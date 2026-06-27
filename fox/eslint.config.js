@@ -23,8 +23,7 @@ export default defineConfig([
   {
     files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
     rules: {
-      "no-console": ["warn", { allow: ["warn", "error"] }],
-      "@typescript-eslint/consistent-type-imports": "error"
+      "no-console": ["warn", { allow: ["warn", "error"] }]
     }
   }
 ]);

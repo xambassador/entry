@@ -1,4 +1,12 @@
 import type { GetEntryResponse } from "@/types";
+import type { Components } from "react-markdown";
+
+import { useState } from "react";
+import clsx from "clsx";
+import { Eye, PencilLine } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
+import remarkGfm from "remark-gfm";
 
 import { Tags } from "@/components/views/editor/tags";
 
@@ -6,6 +14,7 @@ import { EntryDate } from "./date-header";
 import * as elements from "./elements";
 import { CharCount, WordCount } from "./footer";
 import { ContentInput, TitleInput } from "./form-elements";
+import { useContent } from "./store";
 
 import "./editor.css";
 
@@ -16,8 +25,18 @@ type Props = {
   isAuthenticated?: boolean;
 };
 
+const mdComponents: Components = {
+  a: ({ href, children }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 break-all">
+      {children}
+    </a>
+  )
+};
+
 export function Editor(props: Props) {
   const { entry, children, moodPickerSlot, isAuthenticated } = props;
+  const [isPreview, setIsPreview] = useState(false);
+  const liveContent = useContent();
 
   return (
     <div className="flex flex-col flex-1 gap-5 h-full px-4 max-[900px]:overflow-y-auto">
@@ -54,11 +73,30 @@ export function Editor(props: Props) {
               ) : (
                 <h1 className="title-input">{entry?.title}</h1>
               )}
-              {elements.glitDimBorder}
-              {isAuthenticated ? (
-                <ContentInput content={entry?.content} className="open-diary-textarea content-input" />
-              ) : (
-                <p className="open-diary-textarea content-input whitespace-pre-wrap">{renderContentWithLinks(entry?.content)}</p>
+              <div className="flex items-center justify-between mb-6">
+                <div className="w-16 h-px bg-gilt-dim" />
+                {isAuthenticated && (
+                  <button
+                    onClick={() => setIsPreview((p) => !p)}
+                    className="flex items-center gap-1.5 text-[11px] tracking-widest uppercase text-ink-faint hover:text-ink-secondary transition-colors"
+                  >
+                    {isPreview ? <PencilLine size={12} strokeWidth={1.5} /> : <Eye size={12} strokeWidth={1.5} />}
+                    {isPreview ? "Edit" : "Preview"}
+                  </button>
+                )}
+              </div>
+              {isAuthenticated && (
+                <ContentInput
+                  content={entry?.content}
+                  className={clsx("open-diary-textarea content-input", isPreview && "hidden")}
+                />
+              )}
+              {(isAuthenticated ? isPreview : true) && (
+                <div className="open-diary-textarea content-input prose-journal overflow-y-auto">
+                  <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={mdComponents}>
+                    {isAuthenticated ? liveContent : (entry?.content ?? "")}
+                  </ReactMarkdown>
+                </div>
               )}
             </div>
             {elements.diaryCurl}
@@ -67,57 +105,6 @@ export function Editor(props: Props) {
       </div>
     </div>
   );
-}
-
-const urlSplitRegex = /(\b(?:https?:\/\/|www\.)[^\s]+)/gi;
-const urlTokenRegex = /^(?:https?:\/\/|www\.)[^\s]+$/i;
-
-function renderContentWithLinks(content?: string) {
-  if (!content) {
-    return null;
-  }
-
-  const parts = content.split(urlSplitRegex);
-
-  return parts.map((part, index) => {
-    if (!urlTokenRegex.test(part)) {
-      return <span key={`text-${index}`}>{part}</span>;
-    }
-
-    const { coreUrl, trailingPunctuation } = splitTrailingPunctuation(part);
-
-    if (!coreUrl) {
-      return <span key={`text-${index}`}>{part}</span>;
-    }
-
-    const href = coreUrl.startsWith("www.") ? `https://${coreUrl}` : coreUrl;
-
-    return (
-      <span key={`link-${index}`}>
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline underline-offset-2 break-all"
-        >
-          {coreUrl}
-        </a>
-        {trailingPunctuation}
-      </span>
-    );
-  });
-}
-
-function splitTrailingPunctuation(url: string) {
-  let coreUrl = url;
-  let trailingPunctuation = "";
-
-  while (/[),.!?;:]/.test(coreUrl[coreUrl.length - 1] ?? "")) {
-    trailingPunctuation = `${coreUrl[coreUrl.length - 1]}${trailingPunctuation}`;
-    coreUrl = coreUrl.slice(0, -1);
-  }
-
-  return { coreUrl, trailingPunctuation };
 }
 
 const moodLabel = <p className="text-[12px] tracking-widest uppercase mb-2 text-ink-faint">Mood</p>;
