@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Hash } from "lucide-react";
 
 import { cn } from "@/lib/cn";
 
@@ -36,47 +35,39 @@ export function Tags(props: { tags?: string[]; isAuthenticated?: boolean }) {
   }
 
   return (
-    <div>
-      <p className="text-[12px] tracking-widest uppercase mb-2 text-ink-faint">Tags</p>
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {hashIcon}
-        {tags.map((tag) => (
-          <span
-            key={tag}
-            className={cn(
-              "px-2 rounded-full text-xs tracking-wider uppercase group flex items-center gap-1 transition-all duration-200 text-ink-faint border border-gilt-dim",
-              isAuthenticated && "cursor-pointer"
-            )}
-            onClick={() => (isAuthenticated ? handleRemoveTag(tag) : undefined)}
-          >
-            {tag}
-            {isAuthenticated && xIcon}
-          </span>
-        ))}
+    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+      {tags.map((tag) => (
+        <span
+          key={tag}
+          className={cn(
+            "px-2 py-0.5 rounded-md text-xs text-ink-muted border border-border bg-surface-card flex items-center gap-1 transition-colors duration-150",
+            isAuthenticated && "cursor-pointer hover:border-danger/40 hover:text-danger"
+          )}
+          onClick={() => (isAuthenticated ? handleRemoveTag(tag) : undefined)}
+        >
+          #{tag}
+        </span>
+      ))}
 
-        {isAuthenticated && (
-          <input
-            ref={ref}
-            type="text"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleAddTag();
-              }
+      {isAuthenticated && (
+        <input
+          ref={ref}
+          type="text"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleAddTag();
+            }
 
-              if (e.key === "Backspace" && !ref.current?.value && tags.length) {
-                e.preventDefault();
-                handleRemoveTag(tags[tags.length - 1]);
-              }
-            }}
-            placeholder="add tag..."
-            className="bg-transparent text-xs tracking-wider outline-none w-16 text-ink-muted"
-          />
-        )}
-      </div>
+            if (e.key === "Backspace" && !ref.current?.value && tags.length) {
+              e.preventDefault();
+              handleRemoveTag(tags[tags.length - 1]);
+            }
+          }}
+          placeholder="add tag..."
+          className="bg-transparent text-xs text-ink-muted placeholder:text-ink-faint/50 outline-none w-16 caret-accent"
+        />
+      )}
     </div>
   );
 }
-
-const hashIcon = <Hash size={11} strokeWidth={1.5} className="text-ink-faint" />;
-const xIcon = <span className="opacity-0 group-hover:opacity-100 transition-opacity text-wax-light">&#x2715;</span>;

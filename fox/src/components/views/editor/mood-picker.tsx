@@ -4,6 +4,8 @@ import { Loader2 } from "lucide-react";
 
 import { updateEmoji, updateMood, useEmoji, useMood } from "./store";
 
+import "./editor.css";
+
 const Picker = lazy(() => import("@emoji-mart/react"));
 
 interface EmojiSelection {
@@ -44,25 +46,24 @@ export function MoodPicker(props: { mood?: string; emoji?: string }) {
       <Popover.Root open={open} onOpenChange={setOpen}>
         <Popover.Trigger asChild>
           <button
-            className="wax-seal cursor-pointer shrink-0 active:scale-[0.96] transition-transform duration-150 ease-active focus-ring"
+            className="size-8 rounded-lg bg-surface-card border border-border flex items-center justify-center cursor-pointer shrink-0 active:scale-[0.96] transition-transform duration-150 ease-active hover:border-border-strong focus-ring"
             aria-label="Pick an emoji"
           >
-            <span className="text-base leading-none">{hasEmoji ? emoji : "?"}</span>
+            <span className="text-base leading-none">{hasEmoji ? emoji : "·"}</span>
           </button>
         </Popover.Trigger>
 
         <Popover.Portal>
           <Popover.Content
-            sideOffset={10}
+            sideOffset={8}
             align="start"
-            className="emoji-picker-popover z-50 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden border border-gilt-dim origin-(--radix-popover-content-transform-origin) data-[state=open]:animate-popover-in data-[state=closed]:animate-popover-out"
+            className="emoji-picker-popover z-50 rounded-xl shadow-2xl shadow-black/60 overflow-hidden border border-border origin-(--radix-popover-content-transform-origin) data-[state=open]:animate-popover-in data-[state=closed]:animate-popover-out"
           >
             <Suspense fallback={spinner}>
               {emojiData ? (
                 <Picker
                   data={emojiData}
                   onEmojiSelect={handleEmojiSelect}
-                  theme="dark"
                   previewPosition="none"
                   skinTonePosition="none"
                   set="native"
@@ -70,7 +71,6 @@ export function MoodPicker(props: { mood?: string; emoji?: string }) {
                 />
               ) : null}
             </Suspense>
-            <Popover.Arrow className="fill-journal-surface" />
           </Popover.Content>
         </Popover.Portal>
       </Popover.Root>
@@ -82,22 +82,20 @@ export function MoodPicker(props: { mood?: string; emoji?: string }) {
 const MoodInput = forwardRef<HTMLInputElement>(function MoodInput(_, ref) {
   const mood = useMood();
   return (
-    <div className="min-w-0 flex-1">
-      <input
-        type="text"
-        ref={ref}
-        value={mood}
-        onChange={(e) => updateMood(e.target.value)}
-        placeholder="How are you feeling?"
-        maxLength={80}
-        className="w-full bg-transparent text-xs tracking-wider text-ink-muted caret-gilt placeholder:text-ink-faint placeholder:italic focus:outline-none"
-      />
-    </div>
+    <input
+      type="text"
+      ref={ref}
+      value={mood}
+      onChange={(e) => updateMood(e.target.value)}
+      placeholder="How are you feeling?"
+      maxLength={80}
+      className="bg-transparent text-sm text-ink-muted caret-accent placeholder:text-ink-faint/60 focus:outline-none focus:text-ink transition-colors duration-150 min-w-0 flex-1"
+    />
   );
 });
 
 const spinner = (
-  <div className="w-88 h-108.75 bg-journal-surface flex items-center justify-center">
+  <div className="w-88 h-108.75 bg-surface flex items-center justify-center">
     <Loader2 className="animate-spin text-ink-muted" size={24} />
   </div>
 );

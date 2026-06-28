@@ -9,12 +9,14 @@ export const EntryDate = memo(function EntryDate(props: { date?: string }) {
   const year = getYearWithFallback(date);
   const weekday = getWeekdayWithFallback(date);
   return (
-    <div>
-      <p className="text-6xl font-light leading-none text-ink opacity-80">{day}</p>
-      <p className="text-sm mt-2 tracking-wide text-ink-secondary">{weekday}</p>
-      <p className="text-sm mt-0.5 text-ink-secondary opacity-60">
-        {month}, {year}
-      </p>
+    <div className="flex items-baseline gap-3">
+      <span className="text-4xl font-semibold text-ink tabular-nums leading-none">{day}</span>
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-sm text-ink-secondary">{weekday},</span>
+        <span className="text-sm text-ink-muted">
+          {month} {year}
+        </span>
+      </div>
     </div>
   );
 });

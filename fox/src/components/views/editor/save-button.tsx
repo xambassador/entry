@@ -1,7 +1,7 @@
 import type { GetEntryResponse } from "@/types";
 
 import { useState, useTransition } from "react";
-import { Check, Loader2, Save } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 
 import { createEntry, updateEntry } from "@/lib/api";
 import { getErrorMessage, isErrorCode } from "@/lib/api-error";
@@ -16,45 +16,21 @@ type Props = { entry?: GetEntryResponse };
 export function SaveButton({ entry }: Props) {
   const { isPending, label, props, state } = useSubmit(entry);
   return (
-    <button className={cn(defaultStyles, state === "error" && "text-red-400", "disabled:opacity-50")} {...props}>
-      {isPending && spinner}
-      {state === "saved" && check}
-      {saveIcon}
-      <span className="tracking-wide">{label}</span>
-      {shimmer}
+    <button
+      className={cn(
+        "group relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.96] transition-[background-color,border-color,color,filter,transform] duration-150 ease-active overflow-hidden",
+        state === "error"
+          ? "bg-danger/10 border border-danger/30 text-danger"
+          : "bg-accent text-canvas hover:brightness-110"
+      )}
+      {...props}
+    >
+      {isPending && <Loader2 size={14} className="animate-spin shrink-0" />}
+      {state === "saved" && <Check size={14} className="shrink-0" />}
+      <span>{label}</span>
     </button>
   );
 }
-
-function Overlay(props: React.PropsWithChildren) {
-  return (
-    <div className="absolute inset-0 bg-journal-elevated/50 backdrop-blur-sm flex items-center justify-center">
-      {props.children}
-    </div>
-  );
-}
-
-const defaultStyles =
-  "group relative flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border cursor-pointer select-none disabled:cursor-not-allowed text-ink-muted active:scale-[0.98] bg-journal-card border-journal-elevated hover:bg-journal-page transition-all duration-200 ease-active overflow-hidden";
-const spinner = (
-  <Overlay>
-    <Loader2 className="animate-spin transition-transform duration-200 size-4" />
-  </Overlay>
-);
-const shimmer = (
-  <span
-    className="pointer-events-none absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-    style={{
-      background: "radial-gradient(ellipse 60% 80% at 50% 50%, oklch(0.7569 0.0976 190.25 / 4%) 0%, transparent 70%)"
-    }}
-  />
-);
-const check = (
-  <Overlay>
-    <Check className="size-3.5" />
-  </Overlay>
-);
-const saveIcon = <Save className="size-3.5" strokeWidth={1.75} />;
 
 function useSubmit(entry?: GetEntryResponse) {
   const [isPending, startTransition] = useTransition();
@@ -107,9 +83,12 @@ function useSubmit(entry?: GetEntryResponse) {
     });
   };
 
-  let label = isEdit ? "Save changes" : "Save entry";
+  let label = isEdit ? "Save" : "Save entry";
   if (state === "error") {
     label = errorMsg || "Failed";
+  }
+  if (state === "saved") {
+    label = "Saved";
   }
 
   const props: ButtonProps = {

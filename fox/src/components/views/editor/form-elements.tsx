@@ -13,7 +13,7 @@ export function TitleInput(props: { title?: string } & React.InputHTMLAttributes
     <input
       type="text"
       defaultValue={defaultValue}
-      placeholder="Give this entry a title..."
+      placeholder="Title"
       {...rest}
       onChange={(e) => {
         updateTitle(e.target.value);
@@ -33,7 +33,7 @@ export function ContentInput(props: { content?: string } & React.TextareaHTMLAtt
   return (
     <textarea
       defaultValue={defaultValue}
-      placeholder="Dear diary, today I..."
+      placeholder="Start writing..."
       {...rest}
       onChange={(e) => {
         updateContent(e.target.value);

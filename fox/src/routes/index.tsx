@@ -1,47 +1,55 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { RouteError } from "@/components/route-error";
-import { YearAtGlance, YearAtGlanceContainer } from "@/components/year-at-glance";
+import { CalendarView } from "@/components/views/month";
 
-import { getYearAtGlance } from "@/lib/api";
-import { CURRENT_YEAR } from "@/lib/constant";
+import { getEntries } from "@/lib/api";
+import { getDaysInMonth } from "@/lib/date";
+import { CURRENT_MONTH, CURRENT_YEAR, EARLIEST_YEAR } from "@/lib/constant";
 
-function parseYear(searchYear: number | undefined): number {
-  if (searchYear === undefined) {
-    return CURRENT_YEAR;
-  }
-  return searchYear;
+export type CalendarViewMode = "month" | "day";
+
+function clamp(v: number, min: number, max: number) {
+  return Math.min(Math.max(v, min), max);
+}
+
+function parseYear(y: number | undefined) {
+  return y ? clamp(y, EARLIEST_YEAR, CURRENT_YEAR) : CURRENT_YEAR;
+}
+
+function parseMonth(m: number | undefined, year: number) {
+  const max = year === CURRENT_YEAR ? CURRENT_MONTH : 11;
+  return m === undefined ? max : clamp(m, 0, max);
+}
+
+function parseView(v: unknown): CalendarViewMode {
+  return v === "day" ? v : "month";
+}
+
+function parseDay(d: number | undefined, year: number, month: number) {
+  const days = getDaysInMonth(year, month);
+  // default to today when we're on the current month, otherwise the 1st
+  const fallback = year === CURRENT_YEAR && month === CURRENT_MONTH ? new Date().getDate() : 1;
+  return d === undefined ? fallback : clamp(Math.trunc(d), 1, days);
 }
 
 export const Route = createFileRoute("/")({
-  component: Index,
-  validateSearch: (search: { year?: number }) => ({ year: parseYear(search.year) }),
-  loaderDeps: ({ search }) => ({ year: search.year }),
-  loader: ({ deps, abortController }) => getYearAtGlance(deps.year, abortController.signal),
-  errorComponent: ({ error }) => {
-    return <RouteError error={error} />;
+  component: HomeComponent,
+  validateSearch: (search: { year?: number; month?: number; view?: string; day?: number }) => {
+    const year = parseYear(search.year);
+    const month = parseMonth(search.month, year);
+    return { year, month, view: parseView(search.view), day: parseDay(search.day, year, month) };
   },
-  pendingComponent: () => {
-    return (
-      <YearAtGlanceContainer>
-        <div className="size-full grid place-items-center">
-          <p className="text-ink-faint text-sm font-light tracking-wide">Loading...</p>
-        </div>
-      </YearAtGlanceContainer>
-    );
-  }
+  loaderDeps: ({ search }) => ({ year: search.year, month: search.month }),
+  loader: ({ deps, abortController }) => getEntries({ year: deps.year, month: deps.month + 1 }, abortController.signal),
+  errorComponent: ({ error }) => <RouteError error={error} />,
+  pendingComponent: () => (
+    <div className="flex items-center justify-center h-full">
+      <p className="text-ink-faint text-sm">Loading...</p>
+    </div>
+  )
 });
 
-function Index() {
-  const res = Route.useLoaderData();
-  const search = Route.useSearch();
-  const navigate = Route.useNavigate();
-
-  return (
-    <YearAtGlance
-      data={res}
-      year={search.year}
-      onYearChange={(nextYear) => navigate({ to: "/", search: { year: nextYear } })}
-    />
-  );
+function HomeComponent() {
+  return <CalendarView />;
 }
