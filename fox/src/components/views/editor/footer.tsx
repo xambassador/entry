@@ -9,8 +9,8 @@ export function WordCount(props: { content?: string }) {
   }
 
   return (
-    <span className="text-ink-faint text-xs open-diary-wordcount">
-      {wordCount} {wordCount === 1 ? "word" : "words"}
+    <span className="text-ink-faint text-xs tabular-nums">
+      {wordCount}w
     </span>
   );
 }
@@ -23,5 +23,5 @@ export function CharCount(props: { content?: string }) {
     charCount = defaultContent.length;
   }
 
-  return <span className="text-ink-faint text-xs open-diary-wordcount">{charCount} chars</span>;
+  return <span className="text-ink-faint text-xs tabular-nums">{charCount}c</span>;
 }

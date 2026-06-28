@@ -1,14 +1,12 @@
 import { getRouteApi } from "@tanstack/react-router";
 
 export function Header() {
-  const routerCache = getRouteApi("/entries");
-  const { total } = routerCache.useLoaderData();
+  const route = getRouteApi("/");
+  const { total } = route.useLoaderData();
   return (
-    <div className="flex items-baseline justify-between pt-2 px-1">
-      <h1 className="font-light text-ink text-2xl tracking-wide">Index</h1>
-      <span className="text-ink-faint tracking-widest text-[11px] tabular-nums">
-        {total} {total === 1 ? "entry" : "entries"}
-      </span>
+    <div className="flex items-baseline gap-3">
+      <h1 className="text-lg font-semibold text-ink tracking-tight">Entries</h1>
+      <span className="text-ink-faint text-xs tabular-nums">{total}</span>
     </div>
   );
 }
