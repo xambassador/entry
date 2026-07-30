@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth-provider";
 import { PaperSheet } from "@/components/paper-sheet";
 import { RouteError } from "@/components/route-error";
 import { Editor } from "@/components/views/editor/editor";
+import { EditorSkeleton } from "@/components/views/editor/editor-skeleton";
 import { SaveButton } from "@/components/views/editor/save-button";
 
 import { getEntryById } from "@/lib/api";
@@ -22,7 +23,8 @@ export const Route = createFileRoute("/entries_/$id")({
   },
   errorComponent: ({ error }) => {
     return <RouteError error={error} />;
-  }
+  },
+  pendingComponent: () => <EditorSkeleton />
 });
 
 function RouteComponent() {

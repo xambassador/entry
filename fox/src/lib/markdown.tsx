@@ -20,14 +20,14 @@ export const mdComponents: Components = {
     return (
       <span className="my-5 flex justify-center">
         <span
-          className="inline-block max-w-full bg-white p-2.5 pb-3 shadow-[0_8px_22px_rgba(0,0,0,0.22)]"
+          className="inline-block max-w-full bg-white p-2.5 pb-3 shadow-md"
           style={{ transform: `rotate(${tilt}deg)` }}
         >
           <img
             src={typeof src === "string" ? src : undefined}
             alt={alt ?? ""}
             loading="lazy"
-            className="block h-auto max-h-[340px] w-auto max-w-full rounded-[1px] sm:max-w-[300px] sm:w-75"
+            className="block h-auto max-h-[340px] w-auto max-w-full rounded-[1px] sm:max-w-[300px] sm:w-75 object-cover"
           />
           {alt && (
             <span className="block pt-2 text-center font-hand text-lg leading-none text-ink-secondary">{alt}</span>

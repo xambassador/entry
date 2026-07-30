@@ -74,3 +74,5 @@ export interface GetYearAtGlanceResponse {
   }[];
   total: number;
 }
+
+export type Status = "idle" | "pending" | "success" | "error";

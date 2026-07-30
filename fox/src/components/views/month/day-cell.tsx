@@ -1,14 +1,46 @@
 import type { CalendarCell } from "@/lib/date";
 import type { JournalNote } from "@/lib/journal";
+import type { Status } from "@/types";
 
 import { Plus } from "lucide-react";
 
 import { cn } from "@/lib/cn";
+import { getHash, getTilt } from "@/lib/journal";
 
-import { StickyNote } from "./sticky-note";
+import { StickyNote, StickyNoteSkeleton } from "./sticky-note";
 
-export function DayCell({ cell, note, index }: { index: number; cell: CalendarCell; note?: JournalNote }) {
+const noteCells = new Set([2, 5, 10, 13, 15, 19, 23, 25, 34, 36, 40, 42]);
+
+export function DayCell({
+  cell,
+  note,
+  index,
+  status
+}: {
+  index: number;
+  cell: CalendarCell;
+  note?: JournalNote;
+  status?: Status;
+}) {
   const isMissed = !note && cell.inMonth && !cell.isFuture;
+  const isLoading = status === "pending";
+
+  if (isLoading) {
+    return (
+      <div
+        className={cn(
+          "group/cell relative min-h-[var(--cal-cell-h)] border-b border-border px-2.5 pt-2 sm:px-3 sm:pt-2.5",
+          !cell.inMonth && "bg-surface-raised/40",
+          index % 7 === 0 ? "" : "border-r"
+        )}
+      >
+        <DayNumber cell={cell} />
+        {!cell.isFuture && noteCells.has(index) && (
+          <StickyNoteSkeleton tilt={getTilt(getHash(cell.date.toISOString()))} />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div

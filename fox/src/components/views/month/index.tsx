@@ -1,10 +1,8 @@
-import type { CalendarViewMode } from "@/routes/index";
-
 import { getRouteApi } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { CURRENT_MONTH, CURRENT_YEAR, MONTH_NAMES } from "@/lib/constant";
-import { buildMonthGrid, startOfDay } from "@/lib/date";
+import { buildMonthGrid } from "@/lib/date";
 import { decorate, indexByDate } from "@/lib/journal";
 
 import { CalendarGrid } from "./calendar-grid";
@@ -36,27 +34,20 @@ export function CalendarView() {
   );
 }
 
-function title(view: CalendarViewMode, ctx: { year: number; month: number; selected: Date }) {
-  if (view === "day") {
-    return ctx.selected.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-  }
+function title(ctx: { year: number; month: number; selected: Date }) {
   return `${MONTH_NAMES[ctx.month]}, ${ctx.year}`;
 }
 
-function Header() {
-  const { year, month, view, day } = route.useSearch();
+export function Header() {
+  const { year, month } = route.useSearch();
   const navigate = route.useNavigate();
-  const selected = new Date(year, month, day);
-  const today = startOfDay(new Date());
+  const selected = new Date(year, month);
+  const nextDisabled = year === CURRENT_YEAR && month === CURRENT_MONTH;
 
   function shift(dir: 1 | -1) {
-    if (view === "month") {
-      const d = new Date(year, month + dir, 1);
-      navigate({ search: (p) => ({ ...p, year: d.getFullYear(), month: d.getMonth() }) });
-      return;
-    }
-    const d = new Date(year, month, day + dir);
-    navigate({ search: (p) => ({ ...p, year: d.getFullYear(), month: d.getMonth(), day: d.getDate() }) });
+    const d = new Date(year, month + dir, 1);
+    navigate({ search: (p) => ({ ...p, year: d.getFullYear(), month: d.getMonth() }) });
+    return;
   }
 
   function goToday() {
@@ -64,15 +55,10 @@ function Header() {
     navigate({ search: (p) => ({ ...p, year: t.getFullYear(), month: t.getMonth(), day: t.getDate() }) });
   }
 
-  const nextDisabled =
-    view === "month" ? year === CURRENT_YEAR && month === CURRENT_MONTH : selected.getTime() >= today.getTime();
-
   return (
     <div className="flex flex-col gap-4 px-4 pt-5 pb-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:pt-6">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-4xl">
-          {title(view, { year, month, selected })}
-        </h1>
+        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-4xl">{title({ year, month, selected })}</h1>
         <div className="flex items-center gap-0.5">
           <button
             type="button"

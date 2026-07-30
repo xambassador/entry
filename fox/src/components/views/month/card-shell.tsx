@@ -17,7 +17,7 @@ export function CardShell({
 }) {
   if (!note.href) {
     return (
-      <div className={cn("cursor-default", className)} style={style} title="Demo entry (dummy data)">
+      <div className={cn("cursor-default", className)} style={style} title={""}>
         {children}
       </div>
     );

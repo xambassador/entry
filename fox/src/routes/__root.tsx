@@ -4,6 +4,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 import { NotFound } from "@/components/not-found";
 import { RouteError } from "@/components/route-error";
+import { CalendarSkeleton } from "@/components/views/month/calendar-skeleton";
 
 function RootLayout() {
   return (
@@ -31,5 +32,6 @@ function RootNotFound() {
 export const Route = createRootRoute({
   component: RootLayout,
   errorComponent: RootErrorComponent,
-  notFoundComponent: RootNotFound
+  notFoundComponent: RootNotFound,
+  pendingComponent: CalendarSkeleton
 });

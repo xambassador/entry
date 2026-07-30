@@ -19,3 +19,12 @@ export function StickyNote({ note }: { note: JournalNote }) {
     </CardShell>
   );
 }
+
+export function StickyNoteSkeleton({ tilt }: { tilt: number }) {
+  return (
+    <div
+      className="mt-1.5 bg-gray-200/70 min-h-25 block rounded-[3px] px-3 pt-2.5 pb-2 shadow-[0_2px_6px_rgba(0,0,0,0.12)]"
+      style={{ transform: `rotate(${tilt}deg)` }}
+    />
+  );
+}
