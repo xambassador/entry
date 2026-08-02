@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { getHash, getTilt } from "@/lib/journal";
 
+import { PhotoBadge } from "./photo-badge";
 import { StickyNote, StickyNoteSkeleton } from "./sticky-note";
 
 const noteCells = new Set([2, 5, 10, 13, 15, 19, 23, 25, 34, 36, 40, 42]);
@@ -55,6 +56,7 @@ export function DayCell({
       {note && (
         <>
           <StickyNote note={note} />
+          {note.image && <PhotoBadge image={note.image} tilt={-note.tilt * 1.4} />}
           {note.emoji && (
             <span
               className="absolute bottom-2 left-2 grid h-6 w-6 place-items-center rounded-full bg-white text-[13px] shadow-[0_1px_3px_rgba(0,0,0,0.2)]"

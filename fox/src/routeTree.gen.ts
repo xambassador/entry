@@ -9,10 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as YearAtGlanceRouteImport } from './routes/year-at-glance'
 import { Route as EntriesRouteImport } from './routes/entries'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EntriesIdRouteImport } from './routes/entries_.$id'
 
+const YearAtGlanceRoute = YearAtGlanceRouteImport.update({
+  id: '/year-at-glance',
+  path: '/year-at-glance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EntriesRoute = EntriesRouteImport.update({
   id: '/entries',
   path: '/entries',
@@ -32,35 +38,46 @@ const EntriesIdRoute = EntriesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/entries': typeof EntriesRoute
+  '/year-at-glance': typeof YearAtGlanceRoute
   '/entries/$id': typeof EntriesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/entries': typeof EntriesRoute
+  '/year-at-glance': typeof YearAtGlanceRoute
   '/entries/$id': typeof EntriesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/entries': typeof EntriesRoute
+  '/year-at-glance': typeof YearAtGlanceRoute
   '/entries_/$id': typeof EntriesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/entries' | '/entries/$id'
+  fullPaths: '/' | '/entries' | '/year-at-glance' | '/entries/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/entries' | '/entries/$id'
-  id: '__root__' | '/' | '/entries' | '/entries_/$id'
+  to: '/' | '/entries' | '/year-at-glance' | '/entries/$id'
+  id: '__root__' | '/' | '/entries' | '/year-at-glance' | '/entries_/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EntriesRoute: typeof EntriesRoute
+  YearAtGlanceRoute: typeof YearAtGlanceRoute
   EntriesIdRoute: typeof EntriesIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/year-at-glance': {
+      id: '/year-at-glance'
+      path: '/year-at-glance'
+      fullPath: '/year-at-glance'
+      preLoaderRoute: typeof YearAtGlanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/entries': {
       id: '/entries'
       path: '/entries'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EntriesRoute: EntriesRoute,
+  YearAtGlanceRoute: YearAtGlanceRoute,
   EntriesIdRoute: EntriesIdRoute,
 }
 export const routeTree = rootRouteImport

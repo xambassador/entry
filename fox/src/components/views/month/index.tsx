@@ -1,4 +1,4 @@
-import { getRouteApi } from "@tanstack/react-router";
+import { getRouteApi, Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { CURRENT_MONTH, CURRENT_YEAR, MONTH_NAMES } from "@/lib/constant";
@@ -86,6 +86,14 @@ export function Header() {
           Today
         </button>
       </div>
+      <Link
+        to="/year-at-glance"
+        search={{ year, month }}
+        className="flex h-10 items-center gap-2 self-start rounded-full border border-border bg-surface px-4 text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink focus-ring sm:self-auto"
+        title="Year at glance"
+      >
+        Year at Glance
+      </Link>
     </div>
   );
 }

@@ -22,6 +22,8 @@ type Entry struct {
 	ContentHash string   `json:"content_hash"`
 	CreatedAt   string   `json:"created_at"`
 	UpdatedAt   string   `json:"updated_at"`
+	Excerpt     string   `json:"excerpt,omitempty"`
+	Image       string   `json:"image,omitempty"`
 }
 
 type EntryStore struct {

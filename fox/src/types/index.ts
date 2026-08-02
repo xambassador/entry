@@ -18,6 +18,8 @@ export interface Entry {
   tags: string[];
   created_at: string;
   updated_at: string;
+  excerpt?: string;
+  image?: string;
 }
 
 export interface CreateEntryInput {

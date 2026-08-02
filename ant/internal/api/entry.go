@@ -13,6 +13,8 @@ import (
 	"github.com/xambassador/entry/internal/utils"
 )
 
+const entryExcerptLen = 160
+
 func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	body := &createEntryRequest{}
 	if err := json.NewDecoder(r.Body).Decode(body); err != nil {
@@ -256,6 +258,18 @@ func (a *API) ListEntries(w http.ResponseWriter, r *http.Request) {
 		log.Printf("error listing entries: %v", err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to list entries"))
 		return
+	}
+
+	for i := range result.Entries {
+		e := &result.Entries[i]
+		content, err := markdown.GetEntryContent(a.config.DataDir, e.FilePath)
+		if err != nil {
+			log.Printf("error reading entry content for %q: %v", e.ID, err)
+			continue
+		}
+		body := markdown.RemoveFrontmatter(content)
+		e.Excerpt = markdown.Excerpt(body, entryExcerptLen)
+		e.Image = markdown.RandomImage(body)
 	}
 
 	utils.WriteJSON(w, http.StatusOK, result)
