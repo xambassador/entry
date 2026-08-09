@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/xambassador/entry/internal/markdown"
@@ -39,41 +38,20 @@ func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	wordCount := markdown.WordCount(body.Content)
-	now := time.Now().UTC().Format(time.RFC3339)
 
 	tags := body.Tags
 	if tags == nil {
 		tags = []string{}
 	}
 
-	fm := markdown.Frontmatter{
+	entry, err := a.entryStore.Create(store.CreateEntryParams{
 		Date:      body.Date,
 		Title:     body.Title,
 		Mood:      body.Mood,
 		Emoji:     body.Emoji,
-		CreatedAt: now,
-		UpdatedAt: now,
+		Content:   body.Content,
+		WordCount: wordCount,
 		Tags:      tags,
-	}
-
-	hmacKey := []byte(a.config.AuthSecret)
-
-	relPath, contentHash, err := markdown.WriteEntry(a.config.DataDir, fm, body.Content, hmacKey)
-	if err != nil {
-		log.Printf("error writing markdown file: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to write entry file"))
-		return
-	}
-
-	entry, err := a.entryStore.Create(store.CreateEntryParams{
-		Date:        body.Date,
-		Title:       body.Title,
-		Mood:        body.Mood,
-		Emoji:       body.Emoji,
-		FilePath:    relPath,
-		WordCount:   wordCount,
-		Tags:        tags,
-		ContentHash: contentHash,
 	})
 	if err != nil {
 		log.Printf("error creating entry in db: %v", err)
@@ -81,31 +59,11 @@ func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Rewrite the file with the generated ID embedded in frontmatter.
-	fm.ID = entry.ID
-	_, contentHash, err = markdown.WriteEntry(a.config.DataDir, fm, body.Content, hmacKey)
-	if err != nil {
-		log.Printf("error updating markdown file with ID: %v", err)
-	} else {
-		// Update the content hash in DB to match the final file.
-		_, _ = a.entryStore.Update(store.UpdateEntryParams{
-			ID:          entry.ID,
-			Title:       entry.Title,
-			Mood:        entry.Mood,
-			Emoji:       entry.Emoji,
-			WordCount:   entry.WordCount,
-			Tags:        entry.Tags,
-			FilePath:    entry.FilePath,
-			ContentHash: contentHash,
-		})
-	}
-
 	utils.WriteJSON(w, http.StatusCreated, entry)
 }
 
 type getEntryResponse struct {
-	Content  string `json:"content"`
-	Verified bool   `json:"verified"`
+	Content string `json:"content"`
 	store.Entry
 }
 
@@ -123,25 +81,9 @@ func (a *API) GetEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	content, err := markdown.GetEntryContent(a.config.DataDir, entry.FilePath)
-	if err != nil {
-		log.Printf("error getting entry content: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to get entry content"))
-		return
-	}
-
-	verified := false
-	if entry.ContentHash != "" {
-		currentHash, err := markdown.ContentHash(a.config.DataDir, entry.FilePath)
-		if err == nil {
-			verified = currentHash == entry.ContentHash
-		}
-	}
-
 	response := getEntryResponse{
-		Content:  markdown.RemoveFrontmatter(content),
-		Verified: verified,
-		Entry:    *entry,
+		Content: entry.Content,
+		Entry:   *entry,
 	}
 
 	utils.WriteJSON(w, http.StatusOK, response)
@@ -179,37 +121,15 @@ func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	wordCount := markdown.WordCount(body.Content)
-	now := time.Now().UTC().Format(time.RFC3339)
 
-	fm := markdown.Frontmatter{
+	updated, err := a.entryStore.Update(store.UpdateEntryParams{
 		ID:        entry.ID,
-		Date:      entry.Date,
 		Title:     body.Title,
 		Mood:      body.Mood,
 		Emoji:     body.Emoji,
-		CreatedAt: entry.CreatedAt,
-		UpdatedAt: now,
+		Content:   body.Content,
+		WordCount: wordCount,
 		Tags:      tags,
-	}
-
-	hmacKey := []byte(a.config.AuthSecret)
-
-	relPath, contentHash, err := markdown.WriteEntry(a.config.DataDir, fm, body.Content, hmacKey)
-	if err != nil {
-		log.Printf("error writing markdown file: %v", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.NewErrorResponse(ErrInternalError, "Failed to write entry file"))
-		return
-	}
-
-	updated, err := a.entryStore.Update(store.UpdateEntryParams{
-		ID:          entry.ID,
-		Title:       body.Title,
-		Mood:        body.Mood,
-		Emoji:       body.Emoji,
-		WordCount:   wordCount,
-		Tags:        tags,
-		FilePath:    relPath,
-		ContentHash: contentHash,
 	})
 	if err != nil {
 		log.Printf("error updating entry in db: %v", err)
@@ -218,9 +138,8 @@ func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := getEntryResponse{
-		Content:  body.Content,
-		Verified: true,
-		Entry:    *updated,
+		Content: updated.Content,
+		Entry:   *updated,
 	}
 
 	utils.WriteJSON(w, http.StatusOK, response)
@@ -262,14 +181,8 @@ func (a *API) ListEntries(w http.ResponseWriter, r *http.Request) {
 
 	for i := range result.Entries {
 		e := &result.Entries[i]
-		content, err := markdown.GetEntryContent(a.config.DataDir, e.FilePath)
-		if err != nil {
-			log.Printf("error reading entry content for %q: %v", e.ID, err)
-			continue
-		}
-		body := markdown.RemoveFrontmatter(content)
-		e.Excerpt = markdown.Excerpt(body, entryExcerptLen)
-		e.Image = markdown.RandomImage(body)
+		e.Excerpt = markdown.Excerpt(e.Content, entryExcerptLen)
+		e.Image = markdown.RandomImage(e.Content)
 	}
 
 	utils.WriteJSON(w, http.StatusOK, result)

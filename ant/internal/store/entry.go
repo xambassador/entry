@@ -11,19 +11,18 @@ import (
 )
 
 type Entry struct {
-	ID          string   `json:"id"`
-	Date        string   `json:"date"`
-	Title       string   `json:"title"`
-	Mood        string   `json:"mood"`
-	Emoji       string   `json:"emoji"`
-	FilePath    string   `json:"file_path"`
-	WordCount   int      `json:"word_count"`
-	Tags        []string `json:"tags"`
-	ContentHash string   `json:"content_hash"`
-	CreatedAt   string   `json:"created_at"`
-	UpdatedAt   string   `json:"updated_at"`
-	Excerpt     string   `json:"excerpt,omitempty"`
-	Image       string   `json:"image,omitempty"`
+	ID        string   `json:"id"`
+	Date      string   `json:"date"`
+	Title     string   `json:"title"`
+	Mood      string   `json:"mood"`
+	Emoji     string   `json:"emoji"`
+	Content   string   `json:"-"`
+	WordCount int      `json:"word_count"`
+	Tags      []string `json:"tags"`
+	CreatedAt string   `json:"created_at"`
+	UpdatedAt string   `json:"updated_at"`
+	Excerpt   string   `json:"excerpt,omitempty"`
+	Image     string   `json:"image,omitempty"`
 }
 
 type EntryStore struct {
@@ -35,14 +34,13 @@ func NewEntryStore(db *sql.DB) *EntryStore {
 }
 
 type CreateEntryParams struct {
-	Date        string
-	Title       string
-	Mood        string
-	Emoji       string
-	FilePath    string
-	WordCount   int
-	Tags        []string
-	ContentHash string
+	Date      string
+	Title     string
+	Mood      string
+	Emoji     string
+	Content   string
+	WordCount int
+	Tags      []string
 }
 
 func (s *EntryStore) Create(p CreateEntryParams) (*Entry, error) {
@@ -59,26 +57,25 @@ func (s *EntryStore) Create(p CreateEntryParams) (*Entry, error) {
 	}
 
 	_, err = s.db.Exec(`
-		INSERT INTO entries (id, date, title, mood, emoji, file_path, word_count, tags, content_hash, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		id, p.Date, p.Title, p.Mood, p.Emoji, p.FilePath, p.WordCount, string(tagsJSON), p.ContentHash, now, now,
+		INSERT INTO entries (id, date, title, mood, emoji, content, word_count, tags, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		id, p.Date, p.Title, p.Mood, p.Emoji, p.Content, p.WordCount, string(tagsJSON), now, now,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert entry: %w", err)
 	}
 
 	return &Entry{
-		ID:          id,
-		Date:        p.Date,
-		Title:       p.Title,
-		Mood:        p.Mood,
-		Emoji:       p.Emoji,
-		FilePath:    p.FilePath,
-		WordCount:   p.WordCount,
-		Tags:        tags,
-		ContentHash: p.ContentHash,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		ID:        id,
+		Date:      p.Date,
+		Title:     p.Title,
+		Mood:      p.Mood,
+		Emoji:     p.Emoji,
+		Content:   p.Content,
+		WordCount: p.WordCount,
+		Tags:      tags,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}, nil
 }
 
@@ -116,7 +113,7 @@ func (s *EntryStore) List(p ListEntriesParams) (*ListEntriesResult, error) {
 	}
 
 	rows, err := s.db.Query(`
-		SELECT id, date, title, mood, emoji, file_path, word_count, tags, content_hash, created_at, updated_at
+		SELECT id, date, title, mood, emoji, content, word_count, tags, created_at, updated_at
 		FROM entries
 		WHERE strftime('%m', date) = ? AND strftime('%Y', date) = ?
 		ORDER BY date DESC
@@ -132,7 +129,7 @@ func (s *EntryStore) List(p ListEntriesParams) (*ListEntriesResult, error) {
 	for rows.Next() {
 		var e Entry
 		var tagsJSON string
-		if err := rows.Scan(&e.ID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.FilePath, &e.WordCount, &tagsJSON, &e.ContentHash, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.Content, &e.WordCount, &tagsJSON, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan entry: %w", err)
 		}
 		if err := json.Unmarshal([]byte(tagsJSON), &e.Tags); err != nil {
@@ -157,9 +154,9 @@ func (s *EntryStore) GetByID(id string) (*Entry, error) {
 	var e Entry
 	var tagsJSON string
 	err := s.db.QueryRow(`
-		SELECT id, date, title, mood, emoji, file_path, word_count, tags, content_hash, created_at, updated_at
+		SELECT id, date, title, mood, emoji, content, word_count, tags, created_at, updated_at
 		FROM entries WHERE id = ?`, id).
-		Scan(&e.ID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.FilePath, &e.WordCount, &tagsJSON, &e.ContentHash, &e.CreatedAt, &e.UpdatedAt)
+		Scan(&e.ID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.Content, &e.WordCount, &tagsJSON, &e.CreatedAt, &e.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -188,14 +185,13 @@ func (s *EntryStore) GetIDByDate(date string) (string, error) {
 }
 
 type UpdateEntryParams struct {
-	ID          string
-	Title       string
-	Mood        string
-	Emoji       string
-	WordCount   int
-	Tags        []string
-	FilePath    string
-	ContentHash string
+	ID        string
+	Title     string
+	Mood      string
+	Emoji     string
+	Content   string
+	WordCount int
+	Tags      []string
 }
 
 func (s *EntryStore) Update(p UpdateEntryParams) (*Entry, error) {
@@ -212,9 +208,9 @@ func (s *EntryStore) Update(p UpdateEntryParams) (*Entry, error) {
 
 	result, err := s.db.Exec(`
 		UPDATE entries
-		SET title = ?, mood = ?, emoji = ?, word_count = ?, tags = ?, file_path = ?, content_hash = ?, updated_at = ?
+		SET title = ?, mood = ?, emoji = ?, content = ?, word_count = ?, tags = ?, updated_at = ?
 		WHERE id = ?`,
-		p.Title, p.Mood, p.Emoji, p.WordCount, string(tagsJSON), p.FilePath, p.ContentHash, now, p.ID,
+		p.Title, p.Mood, p.Emoji, p.Content, p.WordCount, string(tagsJSON), now, p.ID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update entry: %w", err)
@@ -255,7 +251,7 @@ func (s *EntryStore) Search(p SearchEntriesParams) (*SearchEntriesResult, error)
 	}
 	matchExpr := strings.Join(matchParts, " OR ")
 
-	const selectCols = `e.id, e.date, e.title, e.mood, e.emoji, e.file_path, e.word_count, e.tags, e.content_hash, e.created_at, e.updated_at`
+	const selectCols = `e.id, e.date, e.title, e.mood, e.emoji, e.content, e.word_count, e.tags, e.created_at, e.updated_at`
 	const baseQuery = `
 		FROM entries e
 		JOIN entries_fts fts ON fts.rowid = e.rowid
@@ -279,7 +275,7 @@ func (s *EntryStore) Search(p SearchEntriesParams) (*SearchEntriesResult, error)
 	for rows.Next() {
 		var e Entry
 		var tagsJSON string
-		if err := rows.Scan(&e.ID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.FilePath, &e.WordCount, &tagsJSON, &e.ContentHash, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.Content, &e.WordCount, &tagsJSON, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan entry: %w", err)
 		}
 		if err := json.Unmarshal([]byte(tagsJSON), &e.Tags); err != nil {

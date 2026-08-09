@@ -12,10 +12,9 @@ CREATE TABLE IF NOT EXISTS entries (
 	title        TEXT NOT NULL DEFAULT '',
 	mood         TEXT NOT NULL DEFAULT '',
 	emoji        TEXT NOT NULL DEFAULT '',
-	file_path    TEXT NOT NULL,
+	content      TEXT NOT NULL DEFAULT '',
 	word_count   INTEGER NOT NULL DEFAULT 0,
 	tags         TEXT NOT NULL DEFAULT '[]',
-	content_hash TEXT NOT NULL DEFAULT '',
 	created_at   TEXT NOT NULL,
 	updated_at   TEXT NOT NULL
 );

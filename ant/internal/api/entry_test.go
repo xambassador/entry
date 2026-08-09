@@ -31,7 +31,6 @@ func newTestServer(t *testing.T) http.Handler {
 	require.NoError(t, store.Migrate(db), "run migrations")
 
 	cfg := &config.Config{
-		DataDir: t.TempDir(),
 		RequestConfig: config.RequestConfig{
 			RequestTimeout: 15 * time.Second,
 		},
@@ -410,7 +409,6 @@ func Test_CreateEntry_BlankContent(t *testing.T) {
 	}
 
 	for _, content := range blankContents {
-		content := content
 		t.Run("blank:"+content, func(t *testing.T) {
 			t.Parallel()
 
@@ -681,16 +679,16 @@ func Test_UpdateEntry_BlankContent(t *testing.T) {
 	assert.Equal(t, "missing_content", body.Error.Code)
 }
 
-func Test_GetEntry_ReturnsVerifiedFlag(t *testing.T) {
+func Test_GetEntry_ReturnsContent(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer(t)
 	token := login(t, srv)
 
 	createRec := postEntry(t, srv, token, map[string]any{
-		"title":   "Integrity Test",
+		"title":   "Content Test",
 		"date":    "2026-03-15",
-		"content": "This entry should be verified.",
+		"content": "This entry should be stored in and read back from the database.",
 	})
 	require.Equal(t, http.StatusCreated, createRec.Code)
 
@@ -707,6 +705,5 @@ func Test_GetEntry_ReturnsVerifiedFlag(t *testing.T) {
 
 	var resp map[string]any
 	decodeBody(t, rec, &resp)
-	assert.Equal(t, true, resp["verified"])
-	assert.NotEmpty(t, resp["content_hash"])
+	assert.Equal(t, "This entry should be stored in and read back from the database.", resp["content"])
 }
