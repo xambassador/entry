@@ -29,7 +29,6 @@ export const api = up(fetch, () => ({
 }));
 
 export async function getEntries(query?: { month?: number; year?: number }, signal?: AbortSignal) {
-  await new Promise((resolve) => setTimeout(resolve, 3000));
   const res = await api<GetEntriesResponse>("/entries", {
     params: query,
     signal

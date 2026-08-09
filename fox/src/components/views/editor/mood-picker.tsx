@@ -67,6 +67,7 @@ export function MoodPicker(props: { mood?: string; emoji?: string }) {
                   previewPosition="none"
                   skinTonePosition="none"
                   set="native"
+                  theme="light"
                   autoFocus
                 />
               ) : null}

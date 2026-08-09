@@ -1,7 +1,8 @@
 .emoji-picker-popover em-emoji-picker {
-  --rgb-background: 14, 17, 24;
-  --rgb-input: 20, 24, 32;
-  --rgb-accent: 201, 149, 53;
+  --rgb-color: 24, 27, 31;
+  --rgb-background: 253, 253, 254;
+  --rgb-input: 242, 243, 245;
+  --rgb-accent: 233, 72, 61;
   --color-border: var(--color-border);
   --color-border-over: var(--color-accent);
   --shadow: none;
