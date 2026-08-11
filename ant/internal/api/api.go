@@ -107,6 +107,10 @@ func NewAPI(cfg *config.Config, db *sql.DB) *API {
 	router.Get(writePath, api.serveWritePage)
 
 	if cfg.DevProxy != "" {
+		router.Get("/write.html", api.serveWritePage)
+		router.Get("/write", api.serveWritePage)
+		router.Get("/login.html", api.serveLoginPage)
+		router.Get("/login", api.serveLoginPage)
 		// Dev mode: everything else goes to Vite with no timeout.
 		router.Handle("/*", api.devProxy)
 		router.NotFound(api.devProxy.ServeHTTP)

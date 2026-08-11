@@ -14,6 +14,7 @@ import (
 
 	"github.com/xambassador/entry/internal/api"
 	"github.com/xambassador/entry/internal/config"
+	"github.com/xambassador/entry/internal/store"
 	_ "modernc.org/sqlite"
 )
 
@@ -35,6 +36,11 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+
+	if err := store.Migrate(db); err != nil {
+		log.Fatalf("failed to run migrations: %v", err)
+		os.Exit(1)
+	}
 
 	handler := api.NewAPI(&cfg, db)
 
