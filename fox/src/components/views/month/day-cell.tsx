@@ -4,6 +4,7 @@ import type { Status } from "@/types";
 
 import { Plus } from "lucide-react";
 
+import { useAuth } from "@/components/auth-provider";
 import { cn } from "@/lib/cn";
 import { getHash, getTilt } from "@/lib/journal";
 
@@ -23,7 +24,8 @@ export function DayCell({
   note?: JournalNote;
   status?: Status;
 }) {
-  const isMissed = !note && cell.inMonth && !cell.isFuture;
+  const auth = useAuth();
+  const isMissed = !note && cell.inMonth && !cell.isFuture && auth.isAuthenticated;
   const isLoading = status === "pending";
 
   if (isLoading) {
@@ -52,7 +54,7 @@ export function DayCell({
       )}
     >
       <DayNumber cell={cell} />
-      {isMissed && <AddButton cell={cell} />}
+      {isMissed && auth.writeUrl && <AddButton cell={cell} writeUrl={auth.writeUrl} />}
       {note && (
         <>
           <StickyNote note={note} />
@@ -71,10 +73,10 @@ export function DayCell({
   );
 }
 
-function AddButton({ cell }: { cell: CalendarCell }) {
+function AddButton({ cell, writeUrl }: { cell: CalendarCell; writeUrl: string }) {
   return (
     <a
-      href={`/write?date=${cell.key}`}
+      href={`${writeUrl}?date=${cell.key}`}
       aria-label={`Add entry for ${cell.key}`}
       className="absolute inset-x-0 bottom-0 top-9 grid place-items-center opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover/cell:opacity-100 focus-visible:opacity-100"
     >

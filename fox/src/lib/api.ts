@@ -83,7 +83,9 @@ export async function login(passphrase: string) {
 }
 
 export async function getSession(opts?: { signal?: AbortSignal }) {
-  const res = await api<{ status: "authenticated" | "unauthenticated" }>("/auth/session", { signal: opts?.signal });
+  const res = await api<{ authenticated: boolean; expires_at?: string; write_url?: string }>("/auth/verify", {
+    signal: opts?.signal
+  });
   return res;
 }
 
