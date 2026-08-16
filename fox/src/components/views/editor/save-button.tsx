@@ -7,23 +7,28 @@ import { createEntry, updateEntry } from "@/lib/api";
 import { getErrorMessage, isErrorCode } from "@/lib/api-error";
 import { cn } from "@/lib/cn";
 
-import { useContent, useEmoji, useMood, useTags, useTitle } from "./store";
+import { useColor, useContent, useEmoji, useMood, useTags, useTitle } from "./store";
 
 type SaveState = "idle" | "saved" | "error";
 type ButtonProps = React.ComponentProps<"button">;
-type Props = { entry?: GetEntryResponse };
+type Props = { entry?: GetEntryResponse; defaultDate?: string };
 
-export function SaveButton({ entry }: Props) {
-  const { isPending, label, props, state } = useSubmit(entry);
+export function SaveButton({ entry, defaultDate }: Props) {
+  const { isPending, label, props, state } = useSubmit(entry, defaultDate);
+  const color = useColor();
   return (
     <button
       className={cn(
-        "group relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.96] transition-[background-color,border-color,color,filter,transform] duration-150 ease-active overflow-hidden",
-        state === "error"
-          ? "bg-danger/10 border border-danger/30 text-danger"
-          : "bg-accent text-canvas hover:brightness-110"
+        "group relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.96] transition-[background-color,border-color,color,filter,transform] duration-150 ease-active overflow-hidden",
+        "bg-[var(--card-color)] text-[var(--color-ink-inverted)]"
       )}
       {...props}
+      style={
+        {
+          ...props.style,
+          "--card-color": color
+        } as Record<string, string>
+      }
     >
       {isPending && <Loader2 size={14} className="animate-spin shrink-0" />}
       {state === "saved" && <Check size={14} className="shrink-0" />}
@@ -32,7 +37,7 @@ export function SaveButton({ entry }: Props) {
   );
 }
 
-function useSubmit(entry?: GetEntryResponse) {
+function useSubmit(entry?: GetEntryResponse, defaultDate?: string) {
   const [isPending, startTransition] = useTransition();
   const [state, setState] = useState<SaveState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -41,6 +46,7 @@ function useSubmit(entry?: GetEntryResponse) {
   const mood = useMood();
   const emoji = useEmoji();
   const tags = useTags();
+  const color = useColor();
 
   const isEdit = Boolean(entry?.id);
   const isDisabled = !title.trim() || !content.trim() || !emoji || !mood || isPending;
@@ -59,7 +65,8 @@ function useSubmit(entry?: GetEntryResponse) {
             mood,
             emoji,
             tags,
-            date: entry.date
+            date: entry.date,
+            color
           });
         } else {
           await createEntry({
@@ -68,7 +75,8 @@ function useSubmit(entry?: GetEntryResponse) {
             mood,
             emoji,
             tags,
-            date: today
+            date: defaultDate ?? today,
+            color
           });
         }
         setState("saved");

@@ -14,7 +14,7 @@ export type JournalNote = {
   excerpt: string;
   emoji: string;
   image?: string;
-  color: NoteColor;
+  color: string;
   tilt: number;
 };
 
@@ -25,8 +25,12 @@ export type DecoratableEntry = {
   emoji: string;
   excerpt?: string;
   image?: string;
+  color: string;
 };
 
+/**
+ * @deprecated
+ */
 export const NOTE_COLORS: NoteColor[] = [
   { name: "pink", bg: "#F7D6F4", ink: "#4a3348", muted: "#8a6f86" },
   { name: "green", bg: "#CBEFCB", ink: "#2f4630", muted: "#6d8a6d" },
@@ -60,7 +64,7 @@ export function decorate(entry: DecoratableEntry): JournalNote {
     excerpt: entry.excerpt ?? "",
     emoji: entry.emoji,
     image: entry.image,
-    color: NOTE_COLORS[h % NOTE_COLORS.length],
+    color: entry.color,
     tilt: getTilt(h)
   };
 }

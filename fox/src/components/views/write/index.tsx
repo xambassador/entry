@@ -1,5 +1,3 @@
-import type { NoteColor } from "@/lib/journal";
-
 import { lazy, Suspense } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
@@ -8,17 +6,17 @@ import { Editor } from "@/components/views/editor/editor";
 
 import { SaveButton } from "../editor/save-button";
 
-const FRESH_PAPER: NoteColor = { name: "cream", bg: "#FBF7F0", ink: "#3a352e", muted: "#8f887c" };
 const MoodPicker = lazy(() => import("@/components/views/editor/mood-picker").then((m) => ({ default: m.MoodPicker })));
 
 export function WriteApp() {
+  const date = new URLSearchParams(window.location.search).get("date");
   return (
     <main className="w-full h-screen">
       <div className="w-full h-full overflow-y-auto py-8 sm:px-6 px-2">
         <div className="flex min-h-full w-full">
           <div className="w-full max-w-[var(--content-max-width)] m-auto max-h-[var(--content-max-height)] h-[var(--content-max-height)]">
             <div className="h-full w-full">
-              <PaperSheet color={FRESH_PAPER} className="h-full w-full">
+              <PaperSheet className="h-full w-full">
                 <div className="h-full overflow-hidden pt-6 pr-4 pb-2 pl-11 sm:pr-6 sm:pl-12">
                   <Editor
                     moodPickerSlot={
@@ -27,9 +25,10 @@ export function WriteApp() {
                       </Suspense>
                     }
                     isAuthenticated
+                    defaultDate={date ?? undefined}
                   >
                     {backLink}
-                    <SaveButton />
+                    <SaveButton defaultDate={date ?? undefined} />
                   </Editor>
                 </div>
               </PaperSheet>

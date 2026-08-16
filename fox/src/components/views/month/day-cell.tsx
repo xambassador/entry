@@ -5,10 +5,10 @@ import type { Status } from "@/types";
 import { Plus } from "lucide-react";
 
 import { useAuth } from "@/components/auth-provider";
+
 import { cn } from "@/lib/cn";
 import { getHash, getTilt } from "@/lib/journal";
 
-import { PhotoBadge } from "./photo-badge";
 import { StickyNote, StickyNoteSkeleton } from "./sticky-note";
 
 const noteCells = new Set([2, 5, 10, 13, 15, 19, 23, 25, 34, 36, 40, 42]);
@@ -52,6 +52,15 @@ export function DayCell({
         !cell.inMonth && "bg-surface-raised/40",
         index % 7 === 0 ? "" : "border-r"
       )}
+      style={
+        {
+          "--card-bg-color": `color-mix(in srgb, ${note?.color} 1%, var(--color-card-canvas))`,
+          "--shell-bg-color": `color-mix(in srgb, ${note?.color} 33%, var(--color-card-canvas))`,
+          "--emoji-bg": `color-mix(in srgb, ${note?.color} 80%, var(--color-card-canvas))`,
+          "--card-content-color": `color-mix(in srgb, ${note?.color} 30%, var(--color-ink-card))`,
+          backgroundColor: "var(--shell-bg-color)"
+        } as Record<string, string>
+      }
     >
       <DayNumber cell={cell} />
       {isMissed && auth.writeUrl && <AddButton cell={cell} writeUrl={auth.writeUrl} />}
@@ -61,8 +70,8 @@ export function DayCell({
           {note.image && <PhotoBadge image={note.image} tilt={-note.tilt * 1.4} />}
           {note.emoji && (
             <span
-              className="absolute bottom-2 left-2 grid h-6 w-6 place-items-center rounded-full bg-white text-[13px] shadow-[0_1px_3px_rgba(0,0,0,0.2)]"
-              style={{ transform: `rotate(${-note.tilt}deg)` }}
+              className="absolute bottom-2 left-2 grid h-6 w-6 place-items-center rounded-full text-[13px] papersheet-shadow"
+              style={{ transform: `rotate(${-note.tilt}deg)`, backgroundColor: "var(--emoji-bg)" }}
             >
               {note.emoji}
             </span>
@@ -99,5 +108,18 @@ function DayNumber({ cell }: { cell: CalendarCell }) {
     <span className={cn("text-[15px] font-medium tabular-nums", cell.inMonth ? "text-ink" : "text-ink-faint/60")}>
       {cell.day}
     </span>
+  );
+}
+
+function PhotoBadge({ image, tilt }: { image: string; tilt: number }) {
+  return (
+    <div
+      className="pointer-events-none absolute top-6 right-1.5 z-20 w-24 max-h-[100px] rounded-[2px] bg-white p-1 pb-2 papersheet-shadow"
+      style={{ transform: `rotate(${tilt}deg)` }}
+    >
+      <div className="aspect-square w-full overflow-hidden rounded-[1px] bg-black/5">
+        <img src={image} alt="" loading="lazy" className="h-full w-full object-cover" />
+      </div>
+    </div>
   );
 }

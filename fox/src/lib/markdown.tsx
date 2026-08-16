@@ -20,7 +20,7 @@ export const mdComponents: Components = {
     return (
       <span className="my-5 flex justify-center">
         <span
-          className="inline-block max-w-full bg-white p-2.5 pb-3 shadow-md"
+          className="inline-block max-w-full bg-white p-2.5 pb-3 papersheet-shadow"
           style={{ transform: `rotate(${tilt}deg)` }}
         >
           <img

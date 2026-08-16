@@ -24,7 +24,7 @@ export function CalendarView() {
   return (
     <div className="w-full h-full overflow-y-auto py-8 sm:px-6 px-2">
       <div className="flex min-h-full w-full">
-        <div className="calendar m-auto w-full max-w-[1500px] overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_10px_40px_-12px_rgba(0,0,0,0.18)]">
+        <div className="calendar m-auto w-full max-w-[1500px] overflow-hidden rounded-2xl bg-surface papersheet-shadow">
           <Header />
           <div className="notebook-strip mx-1 mb-2" />
           <CalendarGrid cells={monthCells} noteFor={noteFor} />

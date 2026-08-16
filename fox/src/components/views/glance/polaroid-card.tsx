@@ -26,7 +26,7 @@ export function PolaroidCard({
 
   return (
     <div
-      className="relative w-[320px] cursor-grab touch-none select-none rounded-[4px] border border-black/5 p-4 pb-14 shadow-[0_12px_28px_-14px_rgba(60,45,30,0.45)] transition-shadow duration-300 ease-out active:cursor-grabbing hover:shadow-[0_26px_50px_-16px_rgba(60,45,30,0.5)]"
+      className="relative w-[320px] cursor-grab touch-none select-none rounded-[4px] p-4 pb-14 papersheet-shadow transition-shadow duration-300 ease-out active:cursor-grabbing"
       style={{ background: "linear-gradient(150deg, #fefdfa 0%, #f7f2e9 100%)" }}
       onPointerDown={onDragHandlePointerDown}
     >

@@ -18,15 +18,19 @@ import { useContent } from "./store";
 
 import "./editor.css";
 
+import { ColorPicker } from "./color-picker";
+
 type Props = {
   entry?: GetEntryResponse;
   children?: React.ReactNode;
   moodPickerSlot?: React.ReactNode;
   isAuthenticated?: boolean;
+  color?: string;
+  defaultDate?: string;
 };
 
 export function Editor(props: Props) {
-  const { entry, children, moodPickerSlot, isAuthenticated } = props;
+  const { entry, children, defaultDate = "", moodPickerSlot, isAuthenticated } = props;
   const [isPreview, setIsPreview] = useState(false);
   const liveContent = useContent();
 
@@ -34,7 +38,7 @@ export function Editor(props: Props) {
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="w-full mx-auto flex flex-col flex-1 min-h-0">
         <div className="flex items-center justify-between mb-10 shrink-0">{children}</div>
-        <EntryDate date={entry?.date} />
+        <EntryDate date={entry && entry.date ? entry.date : defaultDate} />
         <div className="mt-5 mb-4">
           {isAuthenticated ? (
             <TitleInput title={entry?.title} className="title-input" />
@@ -46,6 +50,7 @@ export function Editor(props: Props) {
         <div className="flex items-center gap-3 flex-wrap mb-6">
           {moodPickerSlot}
           <Tags tags={entry?.tags} isAuthenticated={isAuthenticated} />
+          <ColorPicker initialColor={entry?.color} />
         </div>
 
         <div className="h-px bg-border mb-7 shrink-0" />

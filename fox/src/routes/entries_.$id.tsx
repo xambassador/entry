@@ -8,10 +8,10 @@ import { RouteError } from "@/components/route-error";
 import { Editor } from "@/components/views/editor/editor";
 import { EditorSkeleton } from "@/components/views/editor/editor-skeleton";
 import { SaveButton } from "@/components/views/editor/save-button";
+import { useColor } from "@/components/views/editor/store";
 
 import { getEntryById } from "@/lib/api";
 import { CURRENT_MONTH, CURRENT_YEAR } from "@/lib/constant";
-import { decorate } from "@/lib/journal";
 
 const MoodPicker = lazy(() => import("@/components/views/editor/mood-picker").then((m) => ({ default: m.MoodPicker })));
 
@@ -30,15 +30,22 @@ export const Route = createFileRoute("/entries_/$id")({
 function RouteComponent() {
   const entry = Route.useLoaderData();
   const auth = useAuth();
-  const color = decorate(entry).color;
-
+  const color = useColor();
   return (
-    <div className="w-full h-full overflow-y-auto py-8 sm:px-6 px-2">
+    <div
+      className="w-full h-full overflow-y-auto py-8 sm:px-6 px-2"
+      style={
+        {
+          "--card-color": color
+        } as Record<string, string>
+      }
+    >
       <div className="flex min-h-full w-full">
         <div className="w-full max-w-[var(--content-max-width)] m-auto max-h-[var(--content-max-height)] h-[var(--content-max-height)]">
-          <PaperSheet color={color} className="h-full w-full">
+          <PaperSheet className="h-full w-full">
             <div className="h-full overflow-hidden pt-6 pr-4 pb-2 pl-11 sm:pr-6 sm:pl-12">
               <Editor
+                color={entry.color}
                 entry={entry}
                 moodPickerSlot={
                   auth.isAuthenticated ? (

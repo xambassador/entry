@@ -19,6 +19,7 @@ export interface Entry {
   created_at: string;
   updated_at: string;
   excerpt?: string;
+  color: string;
   image?: string;
 }
 
@@ -29,6 +30,7 @@ export interface CreateEntryInput {
   emoji: string;
   tags: string[];
   content: string;
+  color: string;
 }
 
 export interface CreateEntryResponse {
@@ -66,6 +68,7 @@ export interface GetEntryResponse {
   tags: string[];
   created_at: string;
   updated_at: string;
+  color: string;
 }
 
 export interface GetYearAtGlanceResponse {

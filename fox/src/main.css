@@ -35,7 +35,16 @@
   --animate-popover-in: popover-in 180ms cubic-bezier(0.23, 1, 0.32, 1);
   --animate-popover-out: popover-out 120ms cubic-bezier(0.23, 1, 0.32, 1);
   --animate-login-card-in: login-card-in 200ms cubic-bezier(0.23, 1, 0.32, 1) both;
-  --animate-stamp-pop: stamp-pop 640ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  --color-black: oklch(0% 0 0);
+  --color-ink-card: oklch(26% 0.05 264);
+  --color-card: oklch(57.02% 0.1895 260.46);
+  --color-card-canvas: oklch(100% 0 0);
+  --color-ink-inverted: oklch(100% 0 0);
+  --card-bg-color: color-mix(in srgb, var(--color-card) 1%, var(--color-card-canvas));
+  --card-content-color: color-mix(in srgb, var(--color-card) 30%, var(--color-ink-card));
+  --color-container: color-mix(in srgb, var(--color-card) 33%, var(--color-card-canvas));
+  --card-shadow: 0 0 0 1px oklch(0% 0 0 / 5%), 0 0.2em 0.2em oklch(0% 0 0 / 5%), 0 0.4em 0.4em oklch(0% 0 0 / 5%), 0 0.8em 0.8em oklch(0% 0 0 / 5%);
 }
 
 * {
@@ -176,12 +185,6 @@ p {
   }
 }
 
-@keyframes stamp-pop {
-  from {
-    transform: rotate(var(--stamp-rot, 0deg)) scale(0);
-  }
-
-  to {
-    transform: rotate(var(--stamp-rot, 0deg)) scale(1);
-  }
+.papersheet-shadow {
+  box-shadow: var(--card-shadow);
 }
