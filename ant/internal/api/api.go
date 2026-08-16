@@ -165,9 +165,16 @@ func (a *API) serveWritePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	today := time.Now().Format("2006-01-02")
+	qDate := r.URL.Query().Get("date")
+	date := time.Now().Format("2006-01-02")
+
+	if qDate != "" {
+		date = qDate
+	}
+
 	var redirectId string
-	if entryID, err := a.entryStore.GetIDByDate(today); err == nil && entryID != "" {
+
+	if entryID, err := a.entryStore.GetIDByDate(date); err == nil && entryID != "" {
 		redirectId = entryID
 	}
 

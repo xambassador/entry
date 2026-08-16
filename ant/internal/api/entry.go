@@ -51,6 +51,7 @@ func (a *API) CreateEntry(w http.ResponseWriter, r *http.Request) {
 		Emoji:     body.Emoji,
 		Content:   body.Content,
 		WordCount: wordCount,
+		Color:     body.Color,
 		Tags:      tags,
 	})
 	if err != nil {
@@ -130,6 +131,7 @@ func (a *API) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 		Content:   body.Content,
 		WordCount: wordCount,
 		Tags:      tags,
+		Color:     body.Color,
 	})
 	if err != nil {
 		log.Printf("error updating entry in db: %v", err)

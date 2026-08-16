@@ -17,6 +17,7 @@ type createEntryRequest struct {
 	Emoji   string   `json:"emoji"`
 	Tags    []string `json:"tags"`
 	Content string   `json:"content"`
+	Color   string   `json:"color"`
 }
 
 func (r *createEntryRequest) validate() (string, string) {
@@ -32,6 +33,7 @@ func (r *createEntryRequest) validate() (string, string) {
 	if strings.TrimSpace(r.Content) == "" {
 		return "missing_content", "Content is required"
 	}
+	// @todo: Validate color
 	return "", ""
 }
 
@@ -41,6 +43,7 @@ type updateEntryRequest struct {
 	Emoji   string   `json:"emoji"`
 	Tags    []string `json:"tags"`
 	Content string   `json:"content"`
+	Color   string   `json:"color"`
 }
 
 func (r *updateEntryRequest) validate() (string, string) {

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS entries (
 	content      TEXT NOT NULL DEFAULT '',
 	word_count   INTEGER NOT NULL DEFAULT 0,
 	tags         TEXT NOT NULL DEFAULT '[]',
+	color 			 TEXT NOT NULL DEFAULT '',
 	created_at   TEXT NOT NULL,
 	updated_at   TEXT NOT NULL
 );

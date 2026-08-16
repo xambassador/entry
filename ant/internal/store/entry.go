@@ -23,6 +23,7 @@ type Entry struct {
 	UpdatedAt string   `json:"updated_at"`
 	Excerpt   string   `json:"excerpt,omitempty"`
 	Image     string   `json:"image,omitempty"`
+	Color     string   `json:"color"`
 }
 
 type EntryStore struct {
@@ -41,6 +42,7 @@ type CreateEntryParams struct {
 	Content   string
 	WordCount int
 	Tags      []string
+	Color     string
 }
 
 func (s *EntryStore) Create(p CreateEntryParams) (*Entry, error) {
@@ -57,9 +59,9 @@ func (s *EntryStore) Create(p CreateEntryParams) (*Entry, error) {
 	}
 
 	_, err = s.db.Exec(`
-		INSERT INTO entries (id, date, title, mood, emoji, content, word_count, tags, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		id, p.Date, p.Title, p.Mood, p.Emoji, p.Content, p.WordCount, string(tagsJSON), now, now,
+		INSERT INTO entries (id, date, title, mood, emoji, content, word_count, tags, color, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		id, p.Date, p.Title, p.Mood, p.Emoji, p.Content, p.WordCount, string(tagsJSON), p.Color, now, now,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert entry: %w", err)
@@ -113,7 +115,7 @@ func (s *EntryStore) List(p ListEntriesParams) (*ListEntriesResult, error) {
 	}
 
 	rows, err := s.db.Query(`
-		SELECT id, date, title, mood, emoji, content, word_count, tags, created_at, updated_at
+		SELECT id, date, title, mood, emoji, content, word_count, tags, color, created_at, updated_at
 		FROM entries
 		WHERE strftime('%m', date) = ? AND strftime('%Y', date) = ?
 		ORDER BY date DESC
@@ -129,7 +131,7 @@ func (s *EntryStore) List(p ListEntriesParams) (*ListEntriesResult, error) {
 	for rows.Next() {
 		var e Entry
 		var tagsJSON string
-		if err := rows.Scan(&e.ID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.Content, &e.WordCount, &tagsJSON, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.Content, &e.WordCount, &tagsJSON, &e.Color, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan entry: %w", err)
 		}
 		if err := json.Unmarshal([]byte(tagsJSON), &e.Tags); err != nil {
@@ -154,9 +156,9 @@ func (s *EntryStore) GetByID(id string) (*Entry, error) {
 	var e Entry
 	var tagsJSON string
 	err := s.db.QueryRow(`
-		SELECT id, date, title, mood, emoji, content, word_count, tags, created_at, updated_at
+		SELECT id, date, title, mood, emoji, content, word_count, tags, color, created_at, updated_at
 		FROM entries WHERE id = ?`, id).
-		Scan(&e.ID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.Content, &e.WordCount, &tagsJSON, &e.CreatedAt, &e.UpdatedAt)
+		Scan(&e.ID, &e.Date, &e.Title, &e.Mood, &e.Emoji, &e.Content, &e.WordCount, &tagsJSON, &e.Color, &e.CreatedAt, &e.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -192,6 +194,7 @@ type UpdateEntryParams struct {
 	Content   string
 	WordCount int
 	Tags      []string
+	Color     string
 }
 
 func (s *EntryStore) Update(p UpdateEntryParams) (*Entry, error) {
@@ -208,9 +211,9 @@ func (s *EntryStore) Update(p UpdateEntryParams) (*Entry, error) {
 
 	result, err := s.db.Exec(`
 		UPDATE entries
-		SET title = ?, mood = ?, emoji = ?, content = ?, word_count = ?, tags = ?, updated_at = ?
+		SET title = ?, mood = ?, emoji = ?, content = ?, word_count = ?, tags = ?, updated_at = ?, color = ?
 		WHERE id = ?`,
-		p.Title, p.Mood, p.Emoji, p.Content, p.WordCount, string(tagsJSON), now, p.ID,
+		p.Title, p.Mood, p.Emoji, p.Content, p.WordCount, string(tagsJSON), now, p.Color, p.ID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update entry: %w", err)
@@ -316,6 +319,7 @@ type YearAtGlanceEntry struct {
 	ID    string `json:"id"`
 	Date  string `json:"date"`
 	Emoji string `json:"emoji"`
+	Color string `json:"color"`
 }
 
 type YearAtGlanceResult struct {
@@ -335,7 +339,7 @@ func (s *EntryStore) YearAtGlance(p YearAtGlanceParams) (*YearAtGlanceResult, er
 	}
 
 	rows, err := s.db.Query(`
-		SELECT id, date, emoji FROM entries
+		SELECT id, date, emoji, color FROM entries
 		WHERE strftime('%Y', date) = ?
 		ORDER BY date DESC`,
 		fmt.Sprintf("%04d", p.Year),
@@ -348,7 +352,7 @@ func (s *EntryStore) YearAtGlance(p YearAtGlanceParams) (*YearAtGlanceResult, er
 	entries := []YearAtGlanceEntry{}
 	for rows.Next() {
 		var e YearAtGlanceEntry
-		if err := rows.Scan(&e.ID, &e.Date, &e.Emoji); err != nil {
+		if err := rows.Scan(&e.ID, &e.Date, &e.Emoji, &e.Color); err != nil {
 			return nil, fmt.Errorf("failed to scan entry: %w", err)
 		}
 		entries = append(entries, e)
