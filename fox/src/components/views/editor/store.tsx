@@ -2,14 +2,14 @@ import { useStore } from "@nanostores/react";
 import { atom } from "nanostores";
 
 export const CARD_COLORS = [
-  { name: "blue", value: "oklch(57.02% 0.1895 260.46)" },
-  { name: "orange", value: "oklch(74% 0.184 70)" },
-  { name: "violet", value: "oklch(66% 0.258 308)" },
-  { name: "purple", value: "oklch(66% 0.206 285.52)" },
-  { name: "brown", value: "oklch(66% 0.0944 71.46)" },
-  { name: "green", value: "oklch(68% 0.176 113.11)" },
-  { name: "cyan", value: "oklch(66% 0.152 208)" },
-  { name: "pink", value: "oklch(71.8% 0.2008 342)" }
+  { name: "blue", value: "oklch(57% 0.1980 260.46)" },
+  { name: "orange", value: "oklch(74% 0.176 70)" },
+  { name: "violet", value: "oklch(61.79% 0.2643 308)" },
+  { name: "purple", value: "oklch(60% 0.210 285.52)" },
+  { name: "brown", value: "oklch(69% 0.1344 71.46)" },
+  { name: "green", value: "oklch(75% 0.176 113.11)" },
+  { name: "cyan", value: "oklch(75% 0.162 214)" },
+  { name: "pink", value: "oklch(66.8% 0.2008 340)" }
 ];
 
 const title = atom("");

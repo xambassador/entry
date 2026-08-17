@@ -56,7 +56,6 @@ export function DayCell({
         {
           "--card-bg-color": `color-mix(in srgb, ${note?.color} 1%, var(--color-card-canvas))`,
           "--shell-bg-color": `color-mix(in srgb, ${note?.color} 33%, var(--color-card-canvas))`,
-          "--emoji-bg": `color-mix(in srgb, ${note?.color} 80%, var(--color-card-canvas))`,
           "--card-content-color": `color-mix(in srgb, ${note?.color} 30%, var(--color-ink-card))`,
           backgroundColor: "var(--shell-bg-color)"
         } as Record<string, string>
@@ -70,8 +69,8 @@ export function DayCell({
           {note.image && <PhotoBadge image={note.image} tilt={-note.tilt * 1.4} />}
           {note.emoji && (
             <span
-              className="absolute bottom-2 left-2 grid h-6 w-6 place-items-center rounded-full text-[13px] papersheet-shadow"
-              style={{ transform: `rotate(${-note.tilt}deg)`, backgroundColor: "var(--emoji-bg)" }}
+              className="absolute bottom-2 left-2 border border-border-strong grid h-6 w-6 bg-white place-items-center rounded-full text-[13px]"
+              style={{ transform: `rotate(${-note.tilt}deg)` }}
             >
               {note.emoji}
             </span>
