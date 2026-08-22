@@ -1,10 +1,3 @@
-export type NoteColor = {
-  name: string;
-  bg: string;
-  ink: string;
-  muted: string;
-};
-
 export type JournalVariant = "sticky" | "polaroid" | "postcard";
 
 export type JournalNote = {
@@ -28,16 +21,6 @@ export type DecoratableEntry = {
   color: string;
 };
 
-/**
- * @deprecated
- */
-export const NOTE_COLORS: NoteColor[] = [
-  { name: "pink", bg: "#F7D6F4", ink: "#4a3348", muted: "#8a6f86" },
-  { name: "green", bg: "#CBEFCB", ink: "#2f4630", muted: "#6d8a6d" },
-  { name: "purple", bg: "#DBD5F8", ink: "#3a3560", muted: "#736e99" },
-  { name: "neutral", bg: "#E8E8E8", ink: "#3a3a3a", muted: "#828282" }
-];
-
 export function getHash(str: string) {
   let h = 0;
   for (let i = 0; i < str.length; i++) {
@@ -49,10 +32,6 @@ export function getHash(str: string) {
 
 export function getTilt(hash: number) {
   return ((hash % 5) - 2) * 0.9;
-}
-
-export function colorForId(id: string): NoteColor {
-  return NOTE_COLORS[getHash(id) % NOTE_COLORS.length];
 }
 
 export function decorate(entry: DecoratableEntry): JournalNote {

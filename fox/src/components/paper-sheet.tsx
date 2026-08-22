@@ -8,7 +8,6 @@ export function PaperSheet({ className, children }: { className?: string; childr
         className
       )}
     >
-      <span aria-hidden className="paper-holes-left pointer-events-none absolute top-8 bottom-8 left-0 w-9" />
       {children}
     </div>
   );

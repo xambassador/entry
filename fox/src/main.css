@@ -135,12 +135,6 @@ p {
   background-repeat: repeat-x;
 }
 
-.paper-holes-left {
-  background-image: radial-gradient(circle at 18px center, rgb(0 0 0 / 16%) 4px, transparent 4.6px);
-  background-size: 100% 32px;
-  background-repeat: repeat-y;
-}
-
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;

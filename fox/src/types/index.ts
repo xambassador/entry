@@ -76,6 +76,7 @@ export interface GetYearAtGlanceResponse {
     id: string;
     date: string;
     emoji: string;
+    color: string;
   }[];
   total: number;
 }
